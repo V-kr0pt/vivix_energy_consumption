@@ -1,5 +1,6 @@
 import pickle
 from datetime import datetime
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 class Model_utils:
@@ -9,7 +10,15 @@ class Model_utils:
         pass
 
     # Train the machine learning model (not a deep learning model)
-    def train_model(self, model, X_train, y_train, model_name, save=True):
+    def train_model(self, model, X_train, y_train, model_name, save=True, grid_search=False, param_grid=None, cv=3):
+        
+        if grid_search:
+            grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
+            grid_search.fit(X_train, y_train)
+            self.best_params = grid_search.best_params_
+            self.best_score = grid_search.best_score_
+            model = model.set_params(**grid_search.best_params_)
+        
         model.fit(X_train, y_train)
 
         if save:
@@ -31,7 +40,7 @@ class Model_utils:
             pickle.dump(self.model, file)
 
     # Load the model from a pickle file
-    def load_model(self, model_path):
+    def load_model(self, model_path=None):
         
         # If the model path is not provided, use the model path that was saved
         if self.model_path is None and model_path is None:
@@ -70,12 +79,11 @@ class Model_utils:
                 pass
         except FileNotFoundError:
             with open(f'{folder }/{file_name}', 'w') as file:
-                file.write('model_name,date,MAE,MSE,RMSE,R2\n')
+                file.write('model_name,date,MAE,MSE,RMSE,R2,model_params\n') 
 
         # Append the results
         with open(f'{folder}/{file_name}', 'a') as file:            
-            file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2}\n')
-
+            file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\"\n')
 
 
     
