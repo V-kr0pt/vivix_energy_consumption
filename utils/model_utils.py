@@ -21,7 +21,7 @@ class Model_utils:
                 task = progress.add_task("[purple4]Grid Search in progress...", total=None)
                 
                 # Grid search to find the best parameters
-                grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
+                grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv, n_jobs=-1)
                 grid_search.fit(X_train, y_train)
                 self.best_params = grid_search.best_params_
                 self.best_score = grid_search.best_score_
