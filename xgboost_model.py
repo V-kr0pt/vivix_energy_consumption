@@ -3,6 +3,9 @@ from sklearn.model_selection import train_test_split
 from utils.model_utils import Model_utils 
 from utils.preprocess import LoadData 
 
+# comments to be saved in the history
+comments = 'Grid Search sem atrasos e com colunas prod_E + prod_L'
+
 load_data = LoadData()
 data = load_data.data
 
@@ -37,13 +40,12 @@ param_grid = {
     'random_state': [42]
 }
 
-
 # Create the XGBRegressor model
 model = xgb.XGBRegressor(objective='reg:squarederror', device='cuda')
 model_utils = Model_utils()
 
 # Train the model with the best parameters
-model_utils.train_model(model, X_train, y_train, model_name, grid_search=True, param_grid=param_grid)
+model_utils.train_model(model, X_train, y_train, model_name, grid_search=True, param_grid=param_grid, comments=comments)
 
 # Load the model with the best parameters
 model = model_utils.load_model()

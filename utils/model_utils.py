@@ -11,8 +11,11 @@ class Model_utils:
         pass
 
     # Train the machine learning model (not a deep learning model)
-    def train_model(self, model, X_train, y_train, model_name, save=True, grid_search=False, param_grid=None, cv=3):
+    def train_model(self, model, X_train, y_train, model_name, save=True, grid_search=False, param_grid=None, cv=3, comments=None):
         
+        # comments about the train model to be saved
+        self.comments = comments
+
         if grid_search:
             # with progress to show a progress bar (rich library)
             with Progress(SpinnerColumn(spinner_name='squish'), 
@@ -90,11 +93,11 @@ class Model_utils:
                 pass
         except FileNotFoundError:
             with open(f'{folder }/{file_name}', 'w') as file:
-                file.write('model_name,date,MAE,MSE,RMSE,R2,model_params\n') 
+                file.write('model_name,date,MAE,MSE,RMSE,R2,model_params,comments\n') 
 
         # Append the results
         with open(f'{folder}/{file_name}', 'a') as file:            
-            file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\"\n')
+            file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",{self.comments}\n')
 
 
     
