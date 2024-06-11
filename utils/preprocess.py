@@ -14,6 +14,8 @@ class LoadData:
         data.rename(columns={
             'BOOSTING (MWH)': 'boosting',
             'Cor': 'cor',
+            'Prod_E': 'prod_e',
+            'Prod_L': 'prod_l',
             'Espess.': 'espessura',
             'Extração forno': 'extracao_forno',
             '%CACO': 'porcentagem_caco'
@@ -23,11 +25,12 @@ class LoadData:
         self.data = data.map(lambda x: x.lower() if isinstance(x, str) else x)
 
         # Identificar colunas categóricas e numéricas
+        self.boolean_features = ['prod_e', 'prod_l'] # Colunas booleanas
         self.categorical_features = ['cor']  # Colunas categóricas
         self.numerical_features = ['boosting', 'espessura', 'extracao_forno', 'porcentagem_caco']  # Colunas numéricas
         
         
-        self.features = self.numerical_features + self.categorical_features
+        self.features = self.numerical_features + self.categorical_features + self.boolean_features  # Colunas de entrada
         self.target = 'Médio diário'  # Coluna alvo
 
 
@@ -57,7 +60,8 @@ class LoadData:
         # Preprocessador
         preprocessor = ColumnTransformer(transformers=[
                 ('num', numeric_transformer, self.numerical_features),
-                ('cat', categorical_transformer, self.categorical_features)])
+                ('cat', categorical_transformer, self.categorical_features),
+                ('bool', 'passthrough', self.boolean_features)])
         
 
         return preprocessor
