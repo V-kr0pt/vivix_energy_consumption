@@ -27,19 +27,19 @@ X_test = preprocessor.transform(X_test)
 model_name = 'xgboost'
 # Define the parameter grid for grid search
 param_grid = {
-    'n_estimators': [100, 300, 500, 700, 900, 1000],
-    'max_depth': [5, 9, 13],
-    'learning_rate': [0.1, 0.01, 0.001, 0.0001],
-    'gamma': [0, 0.1, 0.3, 0.5],
-    'subsample': [0.5, 0.7, 0.9],
-    'reg_alpha': [0,0.2, 0.5],
-    'reg_lambda': [0, 0.2, 0.5],
+    'n_estimators': [500, 700, 900, 1000],
+    'max_depth': [3, 5, 7],
+    'learning_rate': [0.1, 0.01, 0.001],
+    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
+    'subsample': [0.1, 0.3, 0.5],
+    'reg_alpha': [0.5, 0.7], # L1 regularization
+    'reg_lambda': [0], # L2 regularization
     'random_state': [42]
 }
 
 
 # Create the XGBRegressor model
-model = xgb.XGBRegressor(objective='reg:squarederror')
+model = xgb.XGBRegressor(objective='reg:squarederror', device='cuda')
 model_utils = Model_utils()
 
 # Train the model with the best parameters
