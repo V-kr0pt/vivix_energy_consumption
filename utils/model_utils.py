@@ -31,7 +31,14 @@ class Model_utils:
             pickle.dump(self.model, file)
 
     # Load the model from a pickle file
-    def load_model(self):
+    def load_model(self, model_path):
+        
+        # If the model path is not provided, use the model path that was saved
+        if self.model_path is None and model_path is None:
+            raise ValueError('model_path is None. You need to provide a model path to load the model')
+        elif model_path is not None:
+            self.model_path = model_path
+
         with open(self.model_path, 'rb') as file:
             self.model = pickle.load(file)
         return self.model
