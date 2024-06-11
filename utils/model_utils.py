@@ -97,7 +97,7 @@ class Model_utils:
 
         # Append the results
         with open(f'{folder}/{file_name}', 'a') as file:            
-            file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",{self.comments}\n')
+            file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",\"{self.comments}\"\n')
 
 
     
