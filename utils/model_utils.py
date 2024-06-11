@@ -1,4 +1,5 @@
 import pickle
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -13,11 +14,21 @@ class Model_utils:
     def train_model(self, model, X_train, y_train, model_name, save=True, grid_search=False, param_grid=None, cv=3):
         
         if grid_search:
-            grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
-            grid_search.fit(X_train, y_train)
-            self.best_params = grid_search.best_params_
-            self.best_score = grid_search.best_score_
-            model = model.set_params(**grid_search.best_params_)
+            # with progress to show a progress bar (rich library)
+            with Progress(SpinnerColumn(spinner_name='squish'), 
+                          TextColumn('[progress.description]{task.description}')) as progress:
+                
+                task = progress.add_task("[purple4]Grid Search in progress...", total=None)
+                
+                # Grid search to find the best parameters
+                grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
+                grid_search.fit(X_train, y_train)
+                self.best_params = grid_search.best_params_
+                self.best_score = grid_search.best_score_
+                model = model.set_params(**grid_search.best_params_)
+                
+                # Updating the task to indicate it is complete
+                progress.update(task, description="[green]Grid Search Done!")
         
         model.fit(X_train, y_train)
 
