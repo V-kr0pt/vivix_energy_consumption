@@ -18,7 +18,8 @@ class LoadData:
             'Prod_L': 'prod_l',
             'Espess.': 'espessura',
             'Extração forno': 'extracao_forno',
-            '%CACO': 'porcentagem_caco'
+            '%CACO': 'porcentagem_caco',
+            'Médio diário': 'medio_diario'
         }, inplace=True)
 
         # Standardize string columns to lowercase
@@ -29,40 +30,59 @@ class LoadData:
         self.categorical_features = ['cor']  # Colunas categóricas
         self.numerical_features = ['boosting', 'espessura', 'extracao_forno', 'porcentagem_caco']  # Colunas numéricas
         
+        self.features = self.numerical_features + self.categorical_features + self.boolean_features  # Input columns
+        self.target = 'medio_diario'  # Target column
+
+    def create_lag_columns(self, lag_columns, lag_values):
+        # Create lag columns
+        for column, value in zip(lag_columns, lag_values):
+            lag_column_name = column+f'_lag{value}'
+            self.data[lag_column_name] = self.data[column].shift(value)
+
+            if column in self.numerical_features or column == self.target:
+                self.numerical_features.append(lag_column_name)
+            elif column in self.categorical_features:
+                self.categorical_features.append(lag_column_name)
+            elif column in self.boolean_features:
+                self.boolean_features.append(lag_column_name)
         
-        self.features = self.numerical_features + self.categorical_features + self.boolean_features  # Colunas de entrada
-        self.target = 'Médio diário'  # Coluna alvo
+        # update features
+        self.features = self.numerical_features + self.categorical_features + self.boolean_features 
 
+        return self.data 
 
-
-    def create_preprocessor(self, scale_std=False, scale_minmax=False):
+    def create_preprocessor(self, imputer_stategy=None, scale_std=False, scale_minmax=False):
 
         # Transformer to numerical columns
-        steps = [('imputer', SimpleImputer(strategy='mean'))] # If there are missing values, fill with the mean
+        if imputer_stategy is None:
+            step = []
+        else:
+            step = [('imputer', SimpleImputer(strategy='mean'))] # If there are missing values, fill with the mean (Maybe change because of the lag columns)
 
         # Add scaler to the pipeline
         if scale_std and scale_minmax:
             raise ValueError('Only one scaler can be selected')
         elif scale_std:
-            steps.append(('scaler', StandardScaler()))
+            step.append(('scaler', StandardScaler()))
         elif scale_minmax:
-            steps.append(('scaler', MinMaxScaler()))
+            step.append(('scaler', MinMaxScaler()))
 
-        numeric_transformer = Pipeline(steps=steps) # Pipeline to numerical columns
+        if step != []:
+            numeric_transformer = Pipeline(steps=step) # Pipeline to numerical columns
+        else:
+            numeric_transformer = 'passthrough'
 
-        
         # Transformer to categorical columns
-        categorical_transformer = Pipeline(steps=[
-            ('onehot', OneHotEncoder())
-        ])
+        categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder())])
 
+        # Transformers pipeline
+        transformers = [
+            ('num', numeric_transformer, self.numerical_features),
+            ('cat', categorical_transformer, self.categorical_features),
+            ('bool', 'passthrough', self.boolean_features)
+        ]
 
-        # Preprocessador
-        preprocessor = ColumnTransformer(transformers=[
-                ('num', numeric_transformer, self.numerical_features),
-                ('cat', categorical_transformer, self.categorical_features),
-                ('bool', 'passthrough', self.boolean_features)])
-        
+        # Create the preprocessor
+        preprocessor = ColumnTransformer(transformers=transformers)
 
         return preprocessor
-
