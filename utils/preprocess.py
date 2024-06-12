@@ -25,9 +25,12 @@ class LoadData:
         # Standardize string columns to lowercase
         self.data = data.map(lambda x: x.lower() if isinstance(x, str) else x)
 
+        # add week_day column
+        self.data['week_day'] = self.data['Data'].dt.dayofweek
+
         # Identificar colunas categóricas e numéricas
         self.boolean_features = ['prod_e', 'prod_l'] # Colunas booleanas
-        self.categorical_features = ['cor']  # Colunas categóricas
+        self.categorical_features = ['cor', 'week_day']  # Colunas categóricas
         self.numerical_features = ['boosting', 'espessura', 'extracao_forno', 'porcentagem_caco']  # Colunas numéricas
         
         self.features = self.numerical_features + self.categorical_features + self.boolean_features  # Input columns
