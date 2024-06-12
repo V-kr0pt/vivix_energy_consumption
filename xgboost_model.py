@@ -4,14 +4,19 @@ from utils.model_utils import Model_utils
 from utils.preprocess import LoadData 
 
 # comments to be saved in the history
-comments = 'Grid Search sem atrasos e com colunas prod_E + prod_L'
+comments = '7-lag target + week_day as feature + on CPU'
 
 load_data = LoadData()
-data = load_data.data
+
+# lagging columns
+lag_columns_list = ['medio_diario']*7
+lag_values = [1, 2, 3, 4, 5, 6, 7]
+
+
+data = load_data.create_lag_columns(lag_columns_list, lag_values)
 
 features = load_data.features
 target = load_data.target
-
 
 X = data[features]
 y = data[target]
@@ -29,24 +34,28 @@ X_test = preprocessor.transform(X_test)
 # Train the model
 model_name = 'xgboost'
 # Define the parameter grid for grid search
-param_grid = {
-    'n_estimators': [500, 700, 900, 1000],
-    'max_depth': [3, 5, 7],
-    'learning_rate': [0.1, 0.01, 0.001],
-    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
-    'subsample': [0.1, 0.3, 0.5],
-    'reg_alpha': [0.5, 0.7], # L1 regularization
-    'reg_lambda': [0], # L2 regularization
-    'random_state': [42]
-}
+#param_grid = {
+#    'n_estimators': [1200, 1300, 1400],
+#    'max_depth': [2, 3, 4],
+#    'learning_rate': [0.01, 0.001],
+#    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
+#    'subsample': [0.3, 0.5],
+#    'reg_alpha': [0.5, 0.6, 0.7], # L1 regularization
+#    'reg_lambda': [0], # L2 regularization
+#    'random_state': [42]
+#}
 
 # Create the XGBRegressor model
-model = xgb.XGBRegressor(objective='reg:squarederror', device='cuda')
+model = xgb.XGBRegressor(objective='reg:squarederror', enable_categorical='True',
+                         n_estimators= 1300, max_depth= 3, learning_rate= 0.01, 
+                         gamma= 0, subsample= 0.3, reg_alpha= 0.6, 
+                         reg_lambda= 0, random_state= 42, device='cuda'
+                         )
 model_utils = Model_utils()
 
 # Train the model with the best parameters
-model_utils.train_model(model, X_train, y_train, model_name, grid_search=True, param_grid=param_grid, comments=comments)
-
+#model_utils.train_model(model, X_train, y_train, model_name, grid_search=True, param_grid=param_grid, comments=comments)
+model_utils.train_model(model, X_train, y_train, model_name, grid_search=False, comments=comments)
 # Load the model with the best parameters
 model = model_utils.load_model()
 
