@@ -73,7 +73,7 @@ class LoadData:
             numeric_transformer = 'passthrough'
 
         # Transformer to categorical columns
-        categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder())])
+        categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore'))])
 
         # Transformers pipeline
         transformers = [
