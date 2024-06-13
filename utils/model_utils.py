@@ -1,20 +1,26 @@
 import pickle
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from datetime import datetime
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+import plotly.graph_objs as go
 
 class Model_utils:
     def __init__(self):
         self.model = None
         self.model_name = None
+        self.model_path = None
         pass
 
     # Train the machine learning model (not a deep learning model)
-    def train_model(self, model, X_train, y_train, model_name, save=True, grid_search=False, param_grid=None, cv=3, comments=None):
+    def train_model(self, model, X_train, y_train, model_name, save=True, grid_search=False, param_grid=None, n_splits=3, comments=None):
         
         # comments about the train model to be saved
         self.comments = comments
+
+        # create TimeSeriesSplit for cross-validation
+        tscv = TimeSeriesSplit(n_splits=n_splits)
 
         if grid_search:
             # with progress to show a progress bar (rich library)
@@ -24,7 +30,7 @@ class Model_utils:
                 task = progress.add_task("[purple4]Grid Search in progress...", total=None)
                 
                 # Grid search to find the best parameters
-                grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv, n_jobs=-1)
+                grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, n_jobs=-1, verbose=2)
                 grid_search.fit(X_train, y_train)
                 self.best_params = grid_search.best_params_
                 self.best_score = grid_search.best_score_
@@ -98,12 +104,4 @@ class Model_utils:
         # Append the results
         with open(f'{folder}/{file_name}', 'a') as file:            
             file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",\"{self.comments}\"\n')
-
-
-    
-
-
-    
-
-
 
