@@ -8,7 +8,7 @@ from sklearn.compose import ColumnTransformer
 class LoadData:
     def __init__(self):
          # Load data
-        data = pd.read_excel('content/data_trainE_L_MARÇO_COMPLETO.xlsx')
+        data = pd.read_excel('content/cleaned_data_train.xlsx')
 
         # Rename columns
         data.rename(columns={
