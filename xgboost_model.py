@@ -4,7 +4,7 @@ from utils.model_utils import Model_utils
 from utils.preprocess import LoadData 
 
 # comments to be saved in the history
-comments = '7-lag target + week_day as feature + on CPU'
+comments = 'cleaned_data_train'
 
 load_data = LoadData()
 
