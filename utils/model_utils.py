@@ -4,7 +4,9 @@ from datetime import datetime
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-import plotly.graph_objs as go
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class Model_utils:
     def __init__(self):
@@ -105,3 +107,47 @@ class Model_utils:
         with open(f'{folder}/{file_name}', 'a') as file:            
             file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",\"{self.comments}\"\n')
 
+
+    def plot_predictions(self, y_true, y_pred, graph_name='prediction', save=True):
+
+        # Calcular o RMSE
+        rmse_value = np.sqrt(mean_squared_error(y_true, y_pred))
+
+        # Create the error bands
+        upper_band = y_pred + rmse_value
+        lower_band = y_pred - rmse_value
+
+        # create theme
+        sns.set_theme(style="darkgrid")
+        
+        # Create a figure and axis  
+        fig, ax = plt.subplots(figsize=(15, 7))
+
+        # Plot the true values
+        sns.lineplot(x=range(len(y_true)), y=y_true, label='True Values', ax=ax)
+
+        # Plot the predicted values
+        sns.lineplot(x=range(len(y_pred)), y=y_pred, label='Predicted Values', ax=ax)
+
+        # Calculate the RMSE
+        rmse_value = np.sqrt(mean_squared_error(y_true, y_pred))
+
+        # Create the error bands
+        upper_band = y_pred + rmse_value
+        lower_band = y_pred - rmse_value
+
+        # Plot the error bands
+        ax.fill_between(range(len(y_pred)), lower_band, upper_band, alpha=0.3, label='Error Band', color='yellow')
+
+        # Set the title
+        ax.set_title('Consumo de energia médio diário do forno')
+        # Set the y label
+        ax.set_ylabel('Consumo de energia (MWh/dia)')
+
+        # Set the legend
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+        if save:
+            save_graph_path = 'results/graphs/'
+            # Save the plot
+            fig.savefig(save_graph_path + graph_name + '.png')
