@@ -4,3 +4,4 @@ notes
 model_test.ipynb
 .vscode
 docs
+__pycache__
