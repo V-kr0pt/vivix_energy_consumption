@@ -4,7 +4,7 @@ from utils.model_utils import Model_utils
 from utils.preprocess import LoadData 
 
 # comments to be saved in the history
-comments = 'cleaned_data_train'
+comments = 'best model + saving preprocessor'
 
 load_data = LoadData()
 
@@ -29,7 +29,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # Preprocess the data
 X_train = preprocessor.fit_transform(X_train)
-X_test = preprocessor.transform(X_test)
 
 # Train the model
 model_name = 'xgboost'
@@ -48,16 +47,19 @@ model_name = 'xgboost'
 # Create the XGBRegressor model
 model = xgb.XGBRegressor(objective='reg:squarederror', enable_categorical='True',
                          n_estimators= 1300, max_depth= 3, learning_rate= 0.01, 
-                         gamma= 0, subsample= 0.3, reg_alpha= 0.6, 
+                         gamma= 0, subsample= 0.3, reg_alpha= 0.5, 
                          reg_lambda= 0, random_state= 42, device='cuda'
                          )
 model_utils = Model_utils()
 
 # Train the model with the best parameters
 #model_utils.train_model(model, X_train, y_train, model_name, grid_search=True, param_grid=param_grid, comments=comments)
-model_utils.train_model(model, X_train, y_train, model_name, grid_search=False, comments=comments)
-# Load the model with the best parameters
-model = model_utils.load_model()
+model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
+# Load the model with the best parameters + the preprocessor
+model, preprocessor = model_utils.load_model()
+
+# Preprocess the test data
+X_test = preprocessor.transform(X_test) 
 
 # Test the model
 y_pred = model_utils.test_model(X_test, y_test)

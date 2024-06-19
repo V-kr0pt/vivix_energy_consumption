@@ -13,10 +13,10 @@ class Model_utils:
         self.model = None
         self.model_name = None
         self.model_path = None
-        pass
+        self.preprocessor_path = None
 
     # Train the machine learning model (not a deep learning model)
-    def train_model(self, model, X_train, y_train, model_name, save=True, grid_search=False, param_grid=None, cv=3, comments=None):
+    def train_model(self, model, X_train, y_train, model_name, preprocessor=None, save=True, grid_search=False, param_grid=None, cv=3, comments=None):
         
         # comments about the train model to be saved
         self.comments = comments
@@ -41,8 +41,11 @@ class Model_utils:
         model.fit(X_train, y_train)
 
         if save:
+            if preprocessor is None:
+                raise ValueError('You should save the preprocessor to save the model and preprocess the data after loading it!')                
             self.model = model
             self.model_name = model_name
+            self.preprocessor = preprocessor
             self.save_model()
     
     # Save the model in a pickle file
@@ -52,24 +55,47 @@ class Model_utils:
 
         folder = 'models'
         file_name = f'{self.model_name}__{now}.pkl'
+        preprocessor_folder = folder + '/preprocessors'
+        preprocessor_name = f'{self.model_name}__{now}_preprocessor.pkl'
 
         self.model_path = f'{folder}/{file_name}'
+        self.preprocessor_path = f'{preprocessor_folder}/{preprocessor_name}'
 
         with open(self.model_path, 'wb') as file:
             pickle.dump(self.model, file)
 
+        with open(self.preprocessor_path, 'wb') as file:
+            pickle.dump(self.preprocessor, file)
+
     # Load the model from a pickle file
-    def load_model(self, model_path=None):
+    def load_model(self, model_path=None, preprocessor_path=None):
         
-        # If the model path is not provided, use the model path that was saved
+        # If the model path is not provided, use the model path that was saved (can be None)
         if self.model_path is None and model_path is None:
             raise ValueError('model_path is None. You need to provide a model path to load the model')
         elif model_path is not None:
             self.model_path = model_path
 
+        # If the preprocessor path is not provided, use the preprocessor path that was saved (can be None)
+        if self.preprocessor_path is None and preprocessor_path is None:
+            print('preprocessor_path is None. You need to provide a preprocessor_path path to load the preprocessor')
+        elif preprocessor_path is not None:
+            self.preprocessor_path = preprocessor_path
+
+        
+        # load the model
         with open(self.model_path, 'rb') as file:
             self.model = pickle.load(file)
-        return self.model
+
+        # load the preprocessor
+        if self.preprocessor_path is not None:
+            with open(self.preprocessor_path, 'rb') as file:
+                self.preprocessor = pickle.load(file)
+
+            return self.model, self.preprocessor
+        
+        else:
+            return self.model            
 
     # Test the model and save the metrics in a csv file 
     def test_model(self, X_test, y_test, save_metrics=True):
