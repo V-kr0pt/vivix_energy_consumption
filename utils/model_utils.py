@@ -14,6 +14,10 @@ class Model_utils:
         self.model_name = None
         self.model_path = None
         self.preprocessor_path = None
+        self.mae = None
+        self.mse = None
+        self.r2 = None
+        self.rmse = None
 
     # Train the machine learning model (not a deep learning model)
     def train_model(self, model, X_train, y_train, model_name, preprocessor=None, save=True, grid_search=False, param_grid=None, cv=3, comments=None):
@@ -101,13 +105,13 @@ class Model_utils:
     def test_model(self, X_test, y_test, save_metrics=True):
         y_pred = self.model.predict(X_test)
         
-        mae = mean_absolute_error(y_test, y_pred)
-        mse = mean_squared_error(y_test, y_pred)
-        r2 = r2_score(y_test, y_pred)
-        rmse = mse ** 0.5
+        self.mae = mean_absolute_error(y_test, y_pred)
+        self.mse = mean_squared_error(y_test, y_pred)
+        self.r2 = r2_score(y_test, y_pred)
+        self.rmse = self.mse ** 0.5
         
         if save_metrics:
-            self.save_csv_results(mae, mse, r2, rmse)
+            self.save_csv_results(self.mae, self.mse, self.r2, self.rmse)
 
         return y_pred
     
@@ -131,14 +135,17 @@ class Model_utils:
             file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",\"{self.comments}\"\n')
 
 
-    def plot_predictions(self, y_true, y_pred, graph_name='prediction', save=True):
-
-        # Calcular o RMSE
-        rmse_value = np.sqrt(mean_squared_error(y_true, y_pred))
+    def plot_predictions(self, y_true, y_pred, graph_name='prediction', save=True, print_error=True):
+        
+        # Calcule error metrics
+        mae = mean_absolute_error(y_true, y_pred)
+        mse = mean_squared_error(y_true, y_pred)
+        r2 = r2_score(y_true, y_pred)
+        rmse = mse ** 0.5
 
         # Create the error bands
-        upper_band = y_pred + rmse_value
-        lower_band = y_pred - rmse_value
+        upper_band = y_pred + rmse
+        lower_band = y_pred - rmse
 
         # create theme
         sns.set_theme(style="darkgrid")
@@ -152,13 +159,6 @@ class Model_utils:
         # Plot the predicted values
         sns.lineplot(x=range(len(y_pred)), y=y_pred, label='Predicted Values', ax=ax)
 
-        # Calculate the RMSE
-        rmse_value = np.sqrt(mean_squared_error(y_true, y_pred))
-
-        # Create the error bands
-        upper_band = y_pred + rmse_value
-        lower_band = y_pred - rmse_value
-
         # Plot the error bands
         ax.fill_between(range(len(y_pred)), lower_band, upper_band, alpha=0.3, label='Error Band', color='yellow')
 
@@ -169,6 +169,13 @@ class Model_utils:
 
         # Set the legend
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+        # print error metrics
+        if print_error:
+            print(f'MAE:  {mae}')
+            print(f'MSE:  {mse}')
+            print(f'RMSE: {rmse}')
+            print(f'R2:   {r2}')
 
         if save:
             save_graph_path = 'results/graphs/'
