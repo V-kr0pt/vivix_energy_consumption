@@ -4,7 +4,7 @@ from utils.model_utils import Model_utils
 from utils.preprocess import LoadData 
 
 # comments to be saved in the history
-comments = 'best model + saving preprocessor'
+comments = 'best model'
 
 load_data = LoadData()
 
@@ -14,6 +14,7 @@ lag_values = [1, 2, 3, 4, 5, 6, 7]
 
 
 data = load_data.create_lag_columns(lag_columns_list, lag_values)
+data = data.iloc[7:]
 
 features = load_data.features
 target = load_data.target
@@ -50,10 +51,11 @@ model = xgb.XGBRegressor(objective='reg:squarederror', enable_categorical='True'
                          gamma= 0, subsample= 0.3, reg_alpha= 0.5, 
                          reg_lambda= 0, random_state= 42, device='cuda'
                          )
+#model = xgb.XGBRegressor(objective='reg:squarederror', enable_categorical='True')
 model_utils = Model_utils()
 
 # Train the model with the best parameters
-#model_utils.train_model(model, X_train, y_train, model_name, grid_search=True, param_grid=param_grid, comments=comments)
+#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
 model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
 # Load the model with the best parameters + the preprocessor
 model, preprocessor = model_utils.load_model()
