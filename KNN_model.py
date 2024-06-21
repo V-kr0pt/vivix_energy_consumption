@@ -5,7 +5,7 @@ from utils.preprocess import LoadData
 
 
 # comments to be saved in the history
-comments = '4th grid search'
+comments = 'scale_std=true other grid_parameters'
 
 load_data = LoadData()
 
@@ -18,7 +18,7 @@ X = data[features]
 y = data[target]
 
 # Scale is not needed for XGBoost (it is a tree-based model)
-preprocessor = load_data.create_preprocessor(scale_std=False, scale_minmax=False)
+preprocessor = load_data.create_preprocessor(scale_std=True, scale_minmax=False)
 
 # Split the data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -30,11 +30,11 @@ X_train = preprocessor.fit_transform(X_train)
 model_name = 'KNN'
 # Define the parameter grid for grid search
 param_grid = {
-    'algorithm': ['ball_tree', 'kd_tree', 'brute'],
-    'n_neighbors': [4, 5, 6],
-    'weights': ['uniform', 'distance'],
-    'leaf_size': [1, 2, 3],
-    'p': [1]
+    'algorithm': ['auto'],
+    'n_neighbors': [10, 15, 20, 25, 30, 35, 40],
+    'weights': ['distance'],
+    'leaf_size': [1, 2],
+    'p': [1, 2]
 }
 
 # Create the KN-Regressor model
