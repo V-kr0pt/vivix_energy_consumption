@@ -5,11 +5,18 @@ from utils.preprocess import LoadData
 
 
 # comments to be saved in the history
-comments = 'scale_std=true other grid_parameters'
+comments = 'add lagging medio diario + lagging all features in 2, scale_std=True'
 
 load_data = LoadData()
 
 data = load_data.data
+
+# lagging columns
+lag_columns_list = ['medio_diario']*7
+lag_values = [1, 2, 3, 4, 5, 6, 7]
+
+data = load_data.create_lag_columns(lag_columns_list, lag_values)
+data = data.iloc[7:]
 
 features = load_data.features
 target = load_data.target
@@ -31,9 +38,9 @@ model_name = 'KNN'
 # Define the parameter grid for grid search
 param_grid = {
     'algorithm': ['auto'],
-    'n_neighbors': [10, 15, 20, 25, 30, 35, 40],
-    'weights': ['distance'],
-    'leaf_size': [1, 2],
+    'n_neighbors': [2, 5, 10],
+    'weights': ['distance', 'uniform'],
+    'leaf_size': [1, 2, 3],
     'p': [1, 2]
 }
 
