@@ -1,10 +1,9 @@
 import pickle
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from datetime import datetime
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -14,10 +13,6 @@ class Model_utils:
         self.model_name = None
         self.model_path = None
         self.preprocessor_path = None
-        self.mae = None
-        self.mse = None
-        self.r2 = None
-        self.rmse = None
 
     # Train the machine learning model (not a deep learning model)
     def train_model(self, model, X_train, y_train, model_name, preprocessor=None, save=True, grid_search=False, param_grid=None, cv=3, comments=None):
@@ -102,20 +97,24 @@ class Model_utils:
             return self.model            
 
     # Test the model and save the metrics in a csv file 
-    def test_model(self, X_test, y_test, save_metrics=True):
+    def test_model(self, X_test, y_test, save_metrics=True, return_error_metrics=False):
         y_pred = self.model.predict(X_test)
         
-        self.mae = mean_absolute_error(y_test, y_pred)
-        self.mse = mean_squared_error(y_test, y_pred)
-        self.r2 = r2_score(y_test, y_pred)
-        self.rmse = self.mse ** 0.5
+        mae = mean_absolute_error(y_test, y_pred)
+        mse = mean_squared_error(y_test, y_pred)
+        rmse = mse ** 0.5
+        r2 = r2_score(y_test, y_pred)
+        
         
         if save_metrics:
-            self.save_csv_results(self.mae, self.mse, self.r2, self.rmse)
+            self.save_csv_results(mae, mse, rmse, r2)
 
-        return y_pred
+        if return_error_metrics:
+            return y_pred, mae, mse, rmse, r2
+        else:
+            return y_pred
     
-    def save_csv_results(self, mae, mse, r2, rmse):
+    def save_csv_results(self, mae, mse, rmse, r2):
         now = datetime.now()
         now = now.strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -135,14 +134,11 @@ class Model_utils:
             file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",\"{self.comments}\"\n')
 
 
-    def plot_predictions(self, y_true, y_pred, graph_name='prediction', save=True, print_error=True):
+    def plot_predictions(self,  X_test, y_true, graph_name='prediction', save=True, print_error=True):
         
         # Calcule error metrics
-        mae = mean_absolute_error(y_true, y_pred)
-        mse = mean_squared_error(y_true, y_pred)
-        r2 = r2_score(y_true, y_pred)
-        rmse = mse ** 0.5
-
+        y_pred, mae, mse, rmse, r2 = self.test_model(X_test, y_true, save_metrics=False, return_error_metrics=True)
+        
         # Create the error bands
         upper_band = y_pred + rmse
         lower_band = y_pred - rmse
