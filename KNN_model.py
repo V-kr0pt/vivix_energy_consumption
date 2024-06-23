@@ -5,7 +5,7 @@ from utils.preprocess import LoadData
 
 
 # comments to be saved in the history
-comments = 'add lagging medio diario + lagging all features in 2, scale_std=True'
+comments = 'best KNN model with shuffle'
 
 load_data = LoadData()
 
@@ -36,22 +36,22 @@ X_train = preprocessor.fit_transform(X_train)
 # Train the model
 model_name = 'KNN'
 # Define the parameter grid for grid search
-param_grid = {
-    'algorithm': ['auto'],
-    'n_neighbors': [2, 5, 10],
-    'weights': ['distance', 'uniform'],
-    'leaf_size': [1, 2, 3],
-    'p': [1, 2]
-}
+#param_grid = {
+#    'algorithm': ['auto'],
+#    'n_neighbors': [2, 5, 10],
+#    'weights': ['distance', 'uniform'],
+#    'leaf_size': [1, 2, 3],
+#    'p': [1, 2]
+#}
 
 # Create the KN-Regressor model
-model = knr()
-#model = xgb.XGBRegressor(objective='reg:squarederror', enable_categorical='True')
+model = knr(algorithm='auto', leaf_size=1, n_neighbors= 5, p=1, weights ='distance')
+
 model_utils = Model_utils()
 
 # Train the model with the best parameters
-model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
-#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
+#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
+model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
 
 # Load the model with the best parameters + the preprocessor
 model, preprocessor = model_utils.load_model()

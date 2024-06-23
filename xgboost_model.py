@@ -4,7 +4,7 @@ from utils.model_utils import Model_utils
 from utils.preprocess import LoadData 
 
 # comments to be saved in the history
-comments = 'best model'
+comments = 'best xgboost with shuffle'
 
 load_data = LoadData()
 
@@ -26,7 +26,7 @@ y = data[target]
 preprocessor = load_data.create_preprocessor(scale_std=False, scale_minmax=False)
 
 # Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True, random_state=42)
 
 # Preprocess the data
 X_train = preprocessor.fit_transform(X_train)
