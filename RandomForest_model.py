@@ -1,0 +1,61 @@
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from utils.model_utils import Model_utils 
+from utils.preprocess import LoadData 
+
+# comments to be saved in the history
+comments = '2nd Grid search. 7 lag medio_diario.'
+
+load_data = LoadData()
+
+# lagging columns
+lag_columns_list = ['medio_diario']*7
+lag_values = [1, 2, 3, 4, 5, 6, 7]
+
+
+data = load_data.create_lag_columns(lag_columns_list, lag_values)
+
+features = load_data.features
+target = load_data.target
+
+X = data[features]
+y = data[target]
+
+# Scale is not needed for XGBoost (it is a tree-based model)
+preprocessor = load_data.create_preprocessor(scale_std=False, scale_minmax=False)
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Preprocess the data
+X_train = preprocessor.fit_transform(X_train)
+X_test = preprocessor.transform(X_test)
+
+# Train the model
+model_name = 'Random Forest'
+# Define the parameter grid for grid search
+param_grid = {
+    'n_estimators': [50, 100, 200, 300, 400, 600, 800, 1000],
+    'max_depth': [None, 5, 10, 15],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': [1, 'sqrt', 'log2'],
+    'random_state': [42]
+}
+
+# Create the XGBRegressor model
+model = RandomForestRegressor()
+model_utils = Model_utils()
+
+# Train the model with the best parameters
+model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
+#model_utils.train_model(model, X_train, y_train, model_name, grid_search=False, comments=comments)
+
+# Load the model with the best parameters + the preprocessor
+model, preprocessor = model_utils.load_model()
+
+# Preprocess the test data (already preprocessed)
+#X_test = preprocessor.transform(X_test) 
+
+# Test the model
+y_pred = model_utils.test_model(X_test, y_test)
