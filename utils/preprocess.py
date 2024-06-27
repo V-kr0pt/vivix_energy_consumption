@@ -28,6 +28,11 @@ class LoadData:
         # add week_day column
         self.data['week_day'] = self.data['Data'].dt.dayofweek
 
+        # Create a different dataframe with only the last month data
+        self.last_month_data = self.data[self.data['Data'] >= '2024-03-01']
+        # Remove the last month data from the original dataframe
+        self.data = self.data[self.data['Data'] < '2024-03-01']        
+
         # Identificar colunas categóricas e numéricas
         self.boolean_features = ['prod_e', 'prod_l'] # Colunas booleanas
         self.categorical_features = ['cor', 'week_day']  # Colunas categóricas
@@ -36,11 +41,11 @@ class LoadData:
         self.features = self.numerical_features + self.categorical_features + self.boolean_features  # Input columns
         self.target = 'medio_diario'  # Target column
 
-    def create_lag_columns(self, lag_columns, lag_values):
+    def create_lag_columns(self, lag_data, lag_columns, lag_values):
         # Create lag columns
         for column, value in zip(lag_columns, lag_values):
             lag_column_name = column+f'_lag{value}'
-            self.data[lag_column_name] = self.data[column].shift(value)
+            lag_data[lag_column_name] = lag_data[column].shift(value)
 
             if column in self.numerical_features or column == self.target:
                 self.numerical_features.append(lag_column_name)
@@ -52,7 +57,7 @@ class LoadData:
         # update features
         self.features = self.numerical_features + self.categorical_features + self.boolean_features 
 
-        return self.data 
+        return lag_data
 
     def create_preprocessor(self, imputer_stategy=None, scale_std=False, scale_minmax=False):
 

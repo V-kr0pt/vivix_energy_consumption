@@ -4,7 +4,7 @@ from utils.model_utils import Model_utils
 from utils.preprocess import LoadData 
 
 # comments to be saved in the history
-comments = 'best xgboost with shuffle'
+comments = 'best xgboost removing last month data before shuffle'
 
 load_data = LoadData()
 
@@ -12,8 +12,11 @@ load_data = LoadData()
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
 
+# load train/validation data
+data = load_data.data
 
-data = load_data.create_lag_columns(lag_columns_list, lag_values)
+# create the lagged columns in data
+data = load_data.create_lag_columns(data, lag_columns_list, lag_values)
 data = data.iloc[7:]
 
 features = load_data.features
