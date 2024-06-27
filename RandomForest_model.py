@@ -4,7 +4,7 @@ from utils.model_utils import Model_utils
 from utils.preprocess import LoadData 
 
 # comments to be saved in the history
-comments = '2nd Grid search. 7 lag medio_diario. Removed last month data before shuffle'
+comments = 'Best Random Forest Model'
 
 load_data = LoadData()
 
@@ -38,22 +38,22 @@ X_test = preprocessor.transform(X_test)
 # Train the model
 model_name = 'Random_Forest'
 # Define the parameter grid for grid search
-param_grid = {
-    'n_estimators': [50, 100, 200, 300, 400, 600, 800, 1000],
-    'max_depth': [None, 5, 10, 15],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4],
-    'max_features': [1, 'sqrt', 'log2'],
-    'random_state': [42]
-}
+#param_grid = {
+#    'n_estimators': [50, 100, 200, 300, 400, 600, 800, 1000],
+#    'max_depth': [None, 5, 10, 15],
+#    'min_samples_split': [2, 5, 10],
+#    'min_samples_leaf': [1, 2, 4],
+#    'max_features': [1, 'sqrt', 'log2'],
+#    'random_state': [42]
+#}
 
-# Create the XGBRegressor model
-model = RandomForestRegressor()
+# Create the Random Forest model
+model = RandomForestRegressor(n_estimators=400, max_depth=10, min_samples_split=2, min_samples_leaf=1, max_features='sqrt', random_state=42)
 model_utils = Model_utils()
 
 # Train the model with the best parameters
-model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
-#model_utils.train_model(model, X_train, y_train, model_name, grid_search=False, comments=comments)
+#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
+model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
 
 # Load the model with the best parameters + the preprocessor
 model, preprocessor = model_utils.load_model()
