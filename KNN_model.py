@@ -5,7 +5,7 @@ from utils.preprocess import LoadData
 
 
 # comments to be saved in the history
-comments = 'best KNN model. Removed last month data before shuffle'
+comments = 'best KNN model. Removed last month data before shuffle. lagging all features.'
 load_data = LoadData()
 
 # load train/validation data
@@ -14,6 +14,8 @@ data = load_data.data
 # lagging columns
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
+lag_columns_list += load_data.features
+lag_values += [1]*len(load_data.features)
 
 # create the lagged columns in data
 data = load_data.create_lag_columns(data, lag_columns_list, lag_values)
