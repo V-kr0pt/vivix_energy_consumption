@@ -6,32 +6,34 @@ from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 
 class LoadData:
-    def __init__(self):
-         # Load data
-        data = pd.read_excel('content/cleaned_data_train.xlsx')
+    def __init__(self, new_data=False):
 
-        # Rename columns
-        data.rename(columns={
-            'BOOSTING (MWH)': 'boosting',
-            'Cor': 'cor',
-            'Prod_E': 'prod_e',
-            'Prod_L': 'prod_l',
-            'Espess.': 'espessura',
-            'Extração forno': 'extracao_forno',
-            '%CACO': 'porcentagem_caco',
-            'Médio diário': 'medio_diario'
-        }, inplace=True)
+        if not new_data:
+            # Load data
+            data = pd.read_excel('content/cleaned_data_train.xlsx')
 
-        # Standardize string columns to lowercase
-        self.data = data.map(lambda x: x.lower() if isinstance(x, str) else x)
+            # Rename columns
+            data.rename(columns={
+                'BOOSTING (MWH)': 'boosting',
+                'Cor': 'cor',
+                'Prod_E': 'prod_e',
+                'Prod_L': 'prod_l',
+                'Espess.': 'espessura',
+                'Extração forno': 'extracao_forno',
+                '%CACO': 'porcentagem_caco',
+                'Médio diário': 'medio_diario'
+            }, inplace=True)
 
-        # add week_day column
-        self.data['week_day'] = self.data['Data'].dt.dayofweek
+            # Standardize string columns to lowercase
+            self.data = data.map(lambda x: x.lower() if isinstance(x, str) else x)
 
-        # Create a different dataframe with only the last month data
-        self.last_month_data = self.data[self.data['Data'] >= '2024-03-01']
-        # Remove the last month data from the original dataframe
-        self.data = self.data[self.data['Data'] < '2024-03-01']        
+            # add week_day column
+            self.data['week_day'] = self.data['Data'].dt.dayofweek
+
+            # Create a different dataframe with only the last month data
+            self.last_month_data = self.data[self.data['Data'] >= '2024-03-01']
+            # Remove the last month data from the original dataframe
+            self.data = self.data[self.data['Data'] < '2024-03-01']        
 
         # Identificar colunas categóricas e numéricas
         self.boolean_features = ['prod_e', 'prod_l'] # Colunas booleanas
