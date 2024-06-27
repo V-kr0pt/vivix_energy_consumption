@@ -36,7 +36,7 @@ X_train = preprocessor.fit_transform(X_train)
 X_test = preprocessor.transform(X_test)
 
 # Train the model
-model_name = 'Random Forest'
+model_name = 'Random_Forest'
 # Define the parameter grid for grid search
 param_grid = {
     'n_estimators': [50, 100, 200, 300, 400, 600, 800, 1000],
