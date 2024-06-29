@@ -82,37 +82,27 @@ class Model:
         self.preprocessed_df['date'] = preprocessed_data['date'].values
         
         
-    def prediction(self, prediction_date):
-        # Transforming the prediction_date to datetime
-        target_date = pd.to_datetime(prediction_date) #pd.to_datetime('2023-12-31')
-
+    def prediction(self):
         # copy the preprocessed data
         data = self.preprocessed_df.copy()
+        data['medio_diario'] = None
+        max_rows = len(data)-1
 
         # While the last data is before the target_date, do the predictions
-        while self.data['date'].max() < target_date:
+        for i, row in data.iterrows():
             # Selecting the last row since it's the more recent data
-            last_observation = data.iloc[-1]
-            last_observation = last_observation.drop(['medio_diario','date'])  # Removing the target column
+            row = row.drop(['medio_diario','date'])  # Removing the target column
 
             # Doing the prediction using the last observation
-            X = last_observation.values.reshape(1, -1)
+            X = row.values.reshape(1, -1)
             y_pred = self.model.predict(X)
 
+            data.loc[i,'medio_diario'] = y_pred[0]  # Updating the target column
 
-            new_line = last_observation.copy()
-            new_line['medio_diario'] = y_pred
-            self.last_date = self.last_date + timedelta(days=1)  # Updating the date
-            
-            # Atualize as colunas lagged com os valores corretos
-            # Este passo depende de como você implementou a criação das colunas lagged
-            for i in range(1, 8):
-                new_line[f'num__medio_diario_lag{i}'] = data['medio_diario'].iloc[-i]
-
-            # Atualize as colunas lagged com os valores corretos
-            # Este passo depende de como você implementou a criação das colunas lagged
-
-            data = pd.concat([data, new_line])
+            for j in range(1, 8):
+                data.loc[i+j, f'num__medio_diario_lag{j}'] = y_pred[0]
+                if i+j >= max_rows:
+                    break
 
         return data
 
@@ -142,5 +132,5 @@ if __name__ == '__main__':
     model.data_preprocess(data=data,rename_columns_dict=rename_columns_dict)
     
     results_path = './results/'
-    new_data = model.prediction('2024-03-20')
-    new_data.to_csv(results_path+'new_data.csv', index=False)
+    new_data = model.prediction()
+    new_data.to_csv(results_path+'recurrent_data_pred.csv', index=False)
