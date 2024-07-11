@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1720722501201
+current_stage: None
+description: ''
+last_updated_timestamp: 1720722501201
+name: KNN
+run_id: 51f8be8972d14183a46d35c28adca304
+run_link: ''
+source: mlflow-artifacts:/208980603040979899/51f8be8972d14183a46d35c28adca304/artifacts/vivix_model
+status: READY
+status_message: null
+storage_location: mlflow-artifacts:/208980603040979899/51f8be8972d14183a46d35c28adca304/artifacts/vivix_model
+user_id: null
+version: 1

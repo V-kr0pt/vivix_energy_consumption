@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/208980603040979899/51f8be8972d14183a46d35c28adca304/artifacts
+end_time: 1720722501211
+entry_point_name: ''
+experiment_id: '208980603040979899'
+lifecycle_stage: active
+run_id: 51f8be8972d14183a46d35c28adca304
+run_name: amusing-doe-945
+run_uuid: 51f8be8972d14183a46d35c28adca304
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720722499881
+status: 3
+tags: []
+user_id: kr0pt
