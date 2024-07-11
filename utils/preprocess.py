@@ -1,53 +1,24 @@
-import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 
-class LoadData:
-    def __init__(self, new_data=False):
+class Preprocess:
+    def __init__(self, data, numerical_features, categorical_features, boolean_features, target):
+        self.data = data
+        self.numerical_features = numerical_features
+        self.categorical_features = categorical_features
+        self.boolean_features = boolean_features
+        self.target = target
 
-        if not new_data:
-            # Load data
-            data = pd.read_excel('content/cleaned_data_train.xlsx')
-
-            # Rename columns
-            data.rename(columns={
-                'BOOSTING (MWH)': 'boosting',
-                'Cor': 'cor',
-                'Prod_E': 'prod_e',
-                'Prod_L': 'prod_l',
-                'Espess.': 'espessura',
-                'Extração forno': 'extracao_forno',
-                '%CACO': 'porcentagem_caco',
-                'Médio diário': 'medio_diario'
-            }, inplace=True)
-
-            # Standardize string columns to lowercase
-            self.data = data.map(lambda x: x.lower() if isinstance(x, str) else x)
-
-            # add week_day column
-            self.data['week_day'] = self.data['Data'].dt.dayofweek
-
-            # Create a different dataframe with only the last month data
-            self.last_month_data = self.data[self.data['Data'] >= '2024-03-01']
-            # Remove the last month data from the original dataframe
-            self.data = self.data[self.data['Data'] < '2024-03-01']        
-
-        # Identificar colunas categóricas e numéricas
-        self.boolean_features = ['prod_e', 'prod_l'] # Colunas booleanas
-        self.categorical_features = ['cor', 'week_day']  # Colunas categóricas
-        self.numerical_features = ['boosting', 'espessura', 'extracao_forno', 'porcentagem_caco']  # Colunas numéricas
-        
-        self.features = self.numerical_features + self.categorical_features + self.boolean_features  # Input columns
-        self.target = 'medio_diario'  # Target column
-
-    def create_lag_columns(self, lag_data, lag_columns, lag_values):
+        self.features = self.numerical_features + self.categorical_features + self.boolean_features
+    
+    def create_lag_columns(self, lag_columns, lag_values, data=None):
         # Create lag columns
         for column, value in zip(lag_columns, lag_values):
             lag_column_name = column+f'_lag{value}'
-            lag_data[lag_column_name] = lag_data[column].shift(value)
+            self.data[lag_column_name] = self.data[column].shift(value)
 
             if column in self.numerical_features or column == self.target:
                 self.numerical_features.append(lag_column_name)
@@ -59,8 +30,8 @@ class LoadData:
         # update features
         self.features = self.numerical_features + self.categorical_features + self.boolean_features 
 
-        return lag_data
-
+        return self.data 
+    
     def create_preprocessor(self, imputer_stategy=None, scale_std=False, scale_minmax=False):
 
         # Transformer to numerical columns
