@@ -1,34 +1,38 @@
 from sklearn.neighbors import KNeighborsRegressor as knr
 from sklearn.model_selection import train_test_split
 from utils.model_utils import Model_utils 
-from utils.preprocess import LoadData 
+from utils.load_data import LoadData 
+from utils.preprocess import Preprocess
 
 
 # comments to be saved in the history
-comments = 'best KNN model. Removed last month data before shuffle. lagging all features.'
+comments = 'best KNN model'
 load_data = LoadData()
 
 # load train/validation data
 data = load_data.data
 
+preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
+                         load_data.boolean_features, load_data.target)
+
 # lagging columns
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
-lag_columns_list += load_data.features
-lag_values += [1]*len(load_data.features)
+lag_columns_list += preprocess.features
+lag_values += [1]*len(preprocess.features)
 
 # create the lagged columns in data
-data = load_data.create_lag_columns(data, lag_columns_list, lag_values)
+data = preprocess.create_lag_columns(lag_columns_list, lag_values)
 data = data.iloc[7:]
 
-features = load_data.features
-target = load_data.target
+features = preprocess.features
+target = preprocess.target
 
 X = data[features]
 y = data[target]
 
 # Scale is not needed for XGBoost (it is a tree-based model)
-preprocessor = load_data.create_preprocessor(scale_std=True, scale_minmax=False)
+preprocessor = preprocess.create_preprocessor(scale_std=True, scale_minmax=False)
 
 # Split the data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
