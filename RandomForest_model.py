@@ -1,14 +1,18 @@
+import mlflow
+from mlflow.models import infer_signature
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from utils.model_utils import Model_utils 
 from utils.load_data import LoadData 
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = 'Best Random Forest Model'
-load_data = LoadData()
+comments = 'Random Forest com 7 lags medio_diario'
+model_name = 'Random_Forest'
 
 # load train/validation data
+load_data = LoadData()
 data = load_data.data
 
 preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
@@ -36,10 +40,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # Preprocess the data
 X_train = preprocessor.fit_transform(X_train)
-X_test = preprocessor.transform(X_test)
 
 # Train the model
-model_name = 'Random_Forest'
+
 # Define the parameter grid for grid search
 #param_grid = {
 #    'n_estimators': [50, 100, 200, 300, 400, 600, 800, 1000],
@@ -50,19 +53,75 @@ model_name = 'Random_Forest'
 #    'random_state': [42]
 #}
 
-# Create the Random Forest model
-model = RandomForestRegressor(n_estimators=400, max_depth=10, min_samples_split=2, min_samples_leaf=1, max_features='sqrt', random_state=42)
-model_utils = Model_utils()
+# Define the parameters
+params = {
+    'n_estimators':400,
+    'max_depth':10,
+    'min_samples_split':2,
+    'min_samples_leaf':1,
+    'max_features':'sqrt',
+    'random_state':42
+}
 
+# Create the Random Forest model
+model = RandomForestRegressor(**params)
+
+#model_utils = Model_utils()
 # Train the model with the best parameters
 #model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
-model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
-
-# Load the model with the best parameters + the preprocessor
-model, preprocessor = model_utils.load_model()
-
+#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
+#
+## Load the model with the best parameters + the preprocessor
+#model, preprocessor = model_utils.load_model()
 # Preprocess the test data (already preprocessed)
 #X_test = preprocessor.transform(X_test) 
+# Test the model
+#y_pred = model_utils.test_model(X_test, y_test)
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Preprocess the test data
+X_test = preprocessor.transform(X_test) 
 
 # Test the model
-y_pred = model_utils.test_model(X_test, y_test)
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = mse ** 0.5
+r2 = r2_score(y_test, y_pred)
+
+#### MLflow
+
+# Set our tracking server uri for logging
+mlflow.set_tracking_uri(uri="http://127.0.0.1:8080")
+
+# Create a new MLflow Experiment
+mlflow.set_experiment("MLflow Vivix")
+
+with mlflow.start_run():
+    # Log the hyperparameters
+    mlflow.log_params(params)
+
+    # Log the loss metric
+    mlflow.log_metric("MAE", mae)
+    mlflow.log_metric("MSE", mse)
+    mlflow.log_metric("RMSE", rmse)
+    mlflow.log_metric("R2", r2)
+
+    # Set a tag that we can use to remind ourselves what this run was for
+    mlflow.set_tag("Training Info", comments)
+
+    # Infer the model signature
+    signature = infer_signature(X_train, model.predict(X_train))
+
+    # Log the model
+    model_info = mlflow.sklearn.log_model(
+        sk_model=model,
+        artifact_path="vivix_model",
+        signature=signature,
+        input_example=X_train[0],
+        registered_model_name=model_name,
+    )
