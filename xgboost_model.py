@@ -8,15 +8,15 @@ from utils.load_data import LoadData
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = 'XGBoost model trained on 7 lagged media_diario.'
+comments = '7 lagged media_diario '
 model_name = 'xgboost'
 
 load_data = LoadData()
 
 # load train/validation data
-data = load_data.data
+train_data = load_data.data
 
-preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
+preprocess = Preprocess(train_data, load_data.numerical_features, load_data.categorical_features,
                          load_data.boolean_features, load_data.target)
 
 # lagging columns
@@ -30,14 +30,14 @@ data = data.iloc[7:]
 features = preprocess.features
 target = preprocess.target
 
-X = data[features]
-y = data[target]
+X_train = train_data[features]
+y_train = train_data[target]
 
 # Scale is not needed for XGBoost (it is a tree-based model)
 preprocessor = preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
 
 # Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True, random_state=42)
+#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)# random_state=42)
 
 # Preprocess the data
 X_train = preprocessor.fit_transform(X_train)
@@ -72,23 +72,19 @@ params = {
 
 # Create the XGBRegressor model
 model = xgb.XGBRegressor(**params)
-#model = xgb.XGBRegressor(objective='reg:squarederror', enable_categorical='True')
-#model_utils = Model_utils()
-#
-## Train the model with the best parameters
-##model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
-#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
-## Load the model with the best parameters + the preprocessor
-#model, preprocessor = model_utils.load_model()
-#
-## Preprocess the test data
-#X_test = preprocessor.transform(X_test) 
-#
-## Test the model
-#y_pred = model_utils.test_model(X_test, y_test)
 
 # Train the model
 model.fit(X_train, y_train)
+
+### Evaluate the model
+test_data = load_data.last_month_data
+
+# create the lagged columns in data
+test_data = preprocess.create_lag_columns(lag_columns_list, lag_values, data=test_data)
+test_data = test_data.iloc[7:]
+
+X_test = test_data[features]
+y_test = test_data[target]
 
 # Preprocess the test data
 X_test = preprocessor.transform(X_test) 
@@ -102,6 +98,9 @@ mse = mean_squared_error(y_test, y_pred)
 rmse = mse ** 0.5
 r2 = r2_score(y_test, y_pred)
 
+model_utils = Model_utils()
+plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name)
+
 #### MLflow
 
 # Set our tracking server uri for logging
@@ -114,7 +113,10 @@ with mlflow.start_run():
     # Log the hyperparameters
     mlflow.log_params(params)
 
-    # Log the loss metric
+    # Save the prediction plot
+    mlflow.log_artifact(plot_path)
+
+    # Log the loss metricFailed to fetch
     mlflow.log_metric("MAE", mae)
     mlflow.log_metric("MSE", mse)
     mlflow.log_metric("RMSE", rmse)
