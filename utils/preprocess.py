@@ -15,10 +15,12 @@ class Preprocess:
         self.features = self.numerical_features + self.categorical_features + self.boolean_features
     
     def create_lag_columns(self, lag_columns, lag_values, data=None):
+        if data is None:
+            data = self.data
         # Create lag columns
         for column, value in zip(lag_columns, lag_values):
             lag_column_name = column+f'_lag{value}'
-            self.data[lag_column_name] = self.data[column].shift(value)
+            data[lag_column_name] = data[column].shift(value)
 
             if column in self.numerical_features or column == self.target:
                 self.numerical_features.append(lag_column_name)
@@ -30,7 +32,7 @@ class Preprocess:
         # update features
         self.features = self.numerical_features + self.categorical_features + self.boolean_features 
 
-        return self.data 
+        return data 
     
     def create_preprocessor(self, imputer_stategy=None, scale_std=False, scale_minmax=False):
 
