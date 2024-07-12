@@ -1,14 +1,14 @@
 import mlflow
 from mlflow.models import infer_signature
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from utils.model_utils import Model_utils 
 from utils.load_data import LoadData 
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = 'Random Forest com 7 lags medio_diario'
+comments = '7 lags medio_diario + 1 lag all features'
 model_name = 'Random_Forest'
 
 # load train/validation data
@@ -21,6 +21,8 @@ preprocess = Preprocess(data, load_data.numerical_features, load_data.categorica
 # lagging columns
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
+lag_columns_list += load_data.features
+lag_values += [1] * len(load_data.features)
 
 # create the lagged columns in data
 data = preprocess.create_lag_columns(lag_columns_list, lag_values)
@@ -29,14 +31,14 @@ data = data.iloc[7:]
 features = preprocess.features
 target = preprocess.target
 
-X = data[features]
-y = data[target]
+X_train = data[features]
+y_train = data[target]
 
 # Scale is not needed for XGBoost (it is a tree-based model)
 preprocessor = preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
 
 # Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Preprocess the data
 X_train = preprocessor.fit_transform(X_train)
@@ -44,42 +46,50 @@ X_train = preprocessor.fit_transform(X_train)
 # Train the model
 
 # Define the parameter grid for grid search
-#param_grid = {
-#    'n_estimators': [50, 100, 200, 300, 400, 600, 800, 1000],
-#    'max_depth': [None, 5, 10, 15],
-#    'min_samples_split': [2, 5, 10],
-#    'min_samples_leaf': [1, 2, 4],
-#    'max_features': [1, 'sqrt', 'log2'],
-#    'random_state': [42]
-#}
-
-# Define the parameters
-params = {
-    'n_estimators':400,
-    'max_depth':10,
-    'min_samples_split':2,
-    'min_samples_leaf':1,
-    'max_features':'sqrt',
-    'random_state':42
+param_grid = {
+    'n_estimators': [400, 500, 600, 700],
+    'max_depth': [None, 5, 10, 15],
+    'min_samples_split': [2, 5],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': [1, 'sqrt', 'log2'],
+    'random_state': [42]
 }
 
-# Create the Random Forest model
-model = RandomForestRegressor(**params)
+# Define the parameters
+#params = {
+#    'n_estimators':400,
+#    'max_depth':10,
+#    'min_samples_split':2,
+#    'min_samples_leaf':1,
+#    'max_features':'sqrt',
+#    'random_state':42
+#}
 
-#model_utils = Model_utils()
-# Train the model with the best parameters
-#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=True, param_grid=param_grid, comments=comments)
-#model_utils.train_model(model, X_train, y_train, model_name, preprocessor=preprocessor, grid_search=False, comments=comments)
-#
-## Load the model with the best parameters + the preprocessor
-#model, preprocessor = model_utils.load_model()
-# Preprocess the test data (already preprocessed)
-#X_test = preprocessor.transform(X_test) 
-# Test the model
-#y_pred = model_utils.test_model(X_test, y_test)
+# Create the Random Forest model
+model = RandomForestRegressor()#RandomForestRegressor(**params)
+
+# TimeSeriesSplit Config
+tscv = TimeSeriesSplit(n_splits=10)
 
 # Train the model
+grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search.fit(X_train, y_train)
+#model.fit(X_train, y_train)
+
+# Set the best parameters 
+params = grid_search.best_params_
+model = model.set_params(**params)
 model.fit(X_train, y_train)
+
+### Evaluate the model
+test_data = load_data.last_month_data
+
+# create the lagged columns in data
+test_data = preprocess.create_lag_columns(lag_columns_list, lag_values, data=test_data)
+test_data = test_data.iloc[7:]
+
+X_test = test_data[features]
+y_test = test_data[target]
 
 # Preprocess the test data
 X_test = preprocessor.transform(X_test) 
@@ -93,6 +103,9 @@ mse = mean_squared_error(y_test, y_pred)
 rmse = mse ** 0.5
 r2 = r2_score(y_test, y_pred)
 
+model_utils = Model_utils()
+plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name)
+
 #### MLflow
 
 # Set our tracking server uri for logging
@@ -104,6 +117,9 @@ mlflow.set_experiment("MLflow Vivix")
 with mlflow.start_run():
     # Log the hyperparameters
     mlflow.log_params(params)
+
+    # Save the prediction plot
+    mlflow.log_artifact(plot_path)
 
     # Log the loss metric
     mlflow.log_metric("MAE", mae)

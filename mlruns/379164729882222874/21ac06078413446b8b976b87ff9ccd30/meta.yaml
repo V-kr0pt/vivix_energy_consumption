@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/21ac06078413446b8b976b87ff9ccd30/artifacts
+end_time: 1720811062655
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: 21ac06078413446b8b976b87ff9ccd30
+run_name: incongruous-fish-407
+run_uuid: 21ac06078413446b8b976b87ff9ccd30
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720811061320
+status: 3
+tags: []
+user_id: kr0pt
