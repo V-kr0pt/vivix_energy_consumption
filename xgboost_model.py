@@ -1,14 +1,15 @@
 import xgboost as xgb
 import mlflow
 from mlflow.models import infer_signature
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+#from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from utils.model_utils import Model_utils 
 from utils.load_data import LoadData
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = '7 lagged media_diario '
+comments = '7 lag media_diario + 3 lag all features'
 model_name = 'xgboost'
 
 load_data = LoadData()
@@ -22,6 +23,8 @@ preprocess = Preprocess(train_data, load_data.numerical_features, load_data.cate
 # lagging columns
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
+lag_columns_list += load_data.features
+lag_values += [1,2] * len(load_data.features)
 
 # create the lagged columns in data
 data = preprocess.create_lag_columns(lag_columns_list, lag_values)
@@ -44,36 +47,46 @@ X_train = preprocessor.fit_transform(X_train)
 
 # Train the model
 # Define the parameter grid for grid search
-#param_grid = {
-#    'n_estimators': [1200, 1300, 1400],
-#    'max_depth': [2, 3, 4],
-#    'learning_rate': [0.01, 0.001],
-#    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
-#    'subsample': [0.3, 0.5],
-#    'reg_alpha': [0.5, 0.6, 0.7], # L1 regularization
-#    'reg_lambda': [0], # L2 regularization
-#    'random_state': [42]
-#}
-
-# Define the parameters
-params = {
-    'objective':'reg:squarederror',
-    'enable_categorical':'True',
-    'n_estimators': 1300,
-    'max_depth': 3,
-    'learning_rate': 0.01, 
-    'gamma': 0,
-    'subsample': 0.3,
-    'reg_alpha': 0.5, 
-    'reg_lambda': 0,
-    'random_state': 42,
-    'device':'cuda'                    
+param_grid = {
+    'n_estimators': [800, 1000, 1200, 1300, 1400],
+    'max_depth': [2, 3, 4, 6, 10],
+    'learning_rate': [0.1, 0.01, 0.001],
+    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
+    'subsample': [0.3, 0.5],
+    'reg_alpha': [0.5, 0.6, 0.7], # L1 regularization
+    'reg_lambda': [0], # L2 regularization
+    'random_state': [42]
 }
 
+# Define the parameters
+#params = {
+#    'objective':'reg:squarederror',
+#    'enable_categorical':'True',
+#    'n_estimators': 1300,
+#    'max_depth': 3,
+#    'learning_rate': 0.01, 
+#    'gamma': 0,
+#    'subsample': 0.3,
+#    'reg_alpha': 0.5, 
+#    'reg_lambda': 0,
+#    'random_state': 42,
+#    'device':'cuda'                    
+#}
+
 # Create the XGBRegressor model
-model = xgb.XGBRegressor(**params)
+model = xgb.XGBRegressor() #xgb.XGBRegressor(**params)
 
 # Train the model
+# TimeSeriesSplit Config
+tscv = TimeSeriesSplit(n_splits=5)
+
+grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search.fit(X_train, y_train)
+#model.fit(X_train, y_train)
+params = grid_search.best_params_
+
+# Set the best parameters 
+model = model.set_params(**params)
 model.fit(X_train, y_train)
 
 ### Evaluate the model
