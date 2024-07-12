@@ -2,7 +2,6 @@ import xgboost as xgb
 import mlflow
 from mlflow.models import infer_signature
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
-#from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from utils.model_utils import Model_utils 
 from utils.load_data import LoadData
@@ -38,9 +37,6 @@ y_train = train_data[target]
 
 # Scale is not needed for XGBoost (it is a tree-based model)
 preprocessor = preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
-
-# Split the data into training and test sets
-#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)# random_state=42)
 
 # Preprocess the data
 X_train = preprocessor.fit_transform(X_train)
@@ -83,9 +79,9 @@ tscv = TimeSeriesSplit(n_splits=10)
 grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
 grid_search.fit(X_train, y_train)
 #model.fit(X_train, y_train)
-params = grid_search.best_params_
 
 # Set the best parameters 
+params = grid_search.best_params_
 model = model.set_params(**params)
 model.fit(X_train, y_train)
 
