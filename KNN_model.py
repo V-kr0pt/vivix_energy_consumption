@@ -9,7 +9,7 @@ from utils.preprocess import Preprocess
 
 
 # comments to be saved in the history
-comments = 'KNN model with 7 lagged media_diario + 1 lagged all features.'
+comments = '7 lagged media_diario + 1 lagged all features.'
 load_data = LoadData()
 
 # load train/validation data
@@ -45,9 +45,9 @@ model_name = 'KNN'
 # Define the parameter grid for grid search
 param_grid = {
     'algorithm': ['auto'],
-    'n_neighbors': [2, 5, 10],
+    'n_neighbors': [4, 5, 6, 7],
     'weights': ['distance', 'uniform'],
-    'leaf_size': [1, 2, 3],
+    'leaf_size': [1],
     'p': [1, 2]
 }
 
