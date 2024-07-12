@@ -125,10 +125,10 @@ class Model_utils:
             file.write(f'{self.model_name},{now},{mae},{mse},{rmse},{r2},\"{self.model.get_params()}\",\"{self.comments}\"\n')
 
 
-    def plot_predictions(self,  X_test, y_true, graph_name='prediction', save=True, print_error=True):
-        
-        # Calcule error metrics
-        y_pred, mae, mse, rmse, r2 = self.test_model(X_test, y_true, save_metrics=False, return_error_metrics=True)
+    def plot_predictions(self, y_pred, y_true, mae, mse, rmse, r2, model_name,graph_name='prediction',
+                          graph_title='Consumo de energia médio diário do forno',
+                          graph_ylabel='Consumo de energia (MWh/dia)',
+                          save=True, save_path='results/graphs/', print_error=False):
         
         # Create the error bands
         upper_band = y_pred + rmse
@@ -138,7 +138,7 @@ class Model_utils:
         sns.set_theme(style="darkgrid")
         
         # Create a figure and axis  
-        fig, ax = plt.subplots(figsize=(15, 7))
+        fig, ax = plt.subplots(figsize=(10, 5))
 
         # Plot the true values
         sns.lineplot(x=range(len(y_true)), y=y_true, label='True Values', ax=ax)
@@ -150,12 +150,12 @@ class Model_utils:
         ax.fill_between(range(len(y_pred)), lower_band, upper_band, alpha=0.3, label='Error Band', color='yellow')
 
         # Set the title
-        ax.set_title('Consumo de energia médio diário do forno')
+        ax.set_title(graph_title)
         # Set the y label
-        ax.set_ylabel('Consumo de energia (MWh/dia)')
+        ax.set_ylabel(graph_ylabel)
 
         # Set the legend
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        #ax.legend(loc='center left', bbox_to_anchor=(0.7, 0.2))
 
         # print error metrics
         if print_error:
@@ -164,7 +164,9 @@ class Model_utils:
             print(f'RMSE: {rmse}')
             print(f'R2:   {r2}')
 
+        plot_path = save_path + model_name + '_' + graph_name + '.png'
         if save:
-            save_graph_path = 'results/graphs/'
             # Save the plot
-            fig.savefig(save_graph_path + graph_name + '.png')
+            fig.savefig(plot_path)
+
+        return plot_path
