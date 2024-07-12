@@ -9,7 +9,7 @@ from utils.load_data import LoadData
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = '7 lag media_diario + 3 lag all features'
+comments = '7 lag media_diario + 2 lag all features, 10 splits'
 model_name = 'xgboost'
 
 load_data = LoadData()
@@ -48,13 +48,13 @@ X_train = preprocessor.fit_transform(X_train)
 # Train the model
 # Define the parameter grid for grid search
 param_grid = {
-    'n_estimators': [800, 1000, 1200, 1300, 1400],
-    'max_depth': [2, 3, 4, 6, 10],
-    'learning_rate': [0.1, 0.01, 0.001],
+    'n_estimators': [700, 800, 900],
+    'max_depth': [1, 2, 3],
+    'learning_rate': [0.01],
     'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
-    'subsample': [0.3, 0.5],
-    'reg_alpha': [0.5, 0.6, 0.7], # L1 regularization
-    'reg_lambda': [0], # L2 regularization
+    'subsample': [0.4, 0.5, 0.6],
+    'reg_alpha': [0.1, 0.2, 0.3, 0.4, 0.5], # L1 regularization
+    'reg_lambda': [0, 0.01], # L2 regularization
     'random_state': [42]
 }
 
@@ -78,7 +78,7 @@ model = xgb.XGBRegressor() #xgb.XGBRegressor(**params)
 
 # Train the model
 # TimeSeriesSplit Config
-tscv = TimeSeriesSplit(n_splits=5)
+tscv = TimeSeriesSplit(n_splits=10)
 
 grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
 grid_search.fit(X_train, y_train)
