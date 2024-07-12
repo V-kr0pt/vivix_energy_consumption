@@ -22,10 +22,13 @@ class LoadData:
         # Add week_day column
         data['week_day'] = data['Data'].dt.dayofweek
 
-        # Create a different dataframe with only the last month data
-        last_month = data['Data'].max()
-        self.last_month_data = data[data['Data'] >= last_month.replace(day=1)]
-        self.data = data[data['Data'] < last_month.replace(day=1)]
+        # Garantee that the data is sorted by date
+        data = data.sort_values(by='Data')
+
+        # Create a different dataframe with only the last month data (last 30 days)
+        last_30_days = data['Data'].max() - pd.Timedelta(days=30)
+        self.last_month_data = data[data['Data'] >= last_30_days]
+        self.data = data[data['Data'] < last_30_days]
 
         # Identify categorical and numerical columns
         self.boolean_features = ['prod_e', 'prod_l']  # Boolean columns
