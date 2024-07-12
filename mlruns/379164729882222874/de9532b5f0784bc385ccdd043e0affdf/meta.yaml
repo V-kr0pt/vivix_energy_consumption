@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/de9532b5f0784bc385ccdd043e0affdf/artifacts
+end_time: 1720808279237
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: de9532b5f0784bc385ccdd043e0affdf
+run_name: useful-mole-827
+run_uuid: de9532b5f0784bc385ccdd043e0affdf
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720808277675
+status: 3
+tags: []
+user_id: kr0pt

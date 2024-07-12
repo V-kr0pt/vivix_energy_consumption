@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/33de5c4f69494e05b4266b3a33781f42/artifacts
+end_time: 1720807836477
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: 33de5c4f69494e05b4266b3a33781f42
+run_name: enthused-smelt-272
+run_uuid: 33de5c4f69494e05b4266b3a33781f42
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720807834684
+status: 3
+tags: []
+user_id: kr0pt

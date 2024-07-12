@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/d1ac3418b7fc436682793aa99b200260/artifacts
+end_time: 1720809450175
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: d1ac3418b7fc436682793aa99b200260
+run_name: beautiful-chimp-399
+run_uuid: d1ac3418b7fc436682793aa99b200260
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720809448900
+status: 3
+tags: []
+user_id: kr0pt

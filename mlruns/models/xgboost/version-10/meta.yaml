@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1720809354080
+current_stage: None
+description: ''
+last_updated_timestamp: 1720809354080
+name: xgboost
+run_id: 689ebd39453b432cbd6ae956eb4fc757
+run_link: ''
+source: mlflow-artifacts:/379164729882222874/689ebd39453b432cbd6ae956eb4fc757/artifacts/vivix_model
+status: READY
+status_message: null
+storage_location: mlflow-artifacts:/379164729882222874/689ebd39453b432cbd6ae956eb4fc757/artifacts/vivix_model
+user_id: null
+version: 10

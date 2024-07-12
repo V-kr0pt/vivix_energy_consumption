@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/e7d7ab6a2af14626b21da40a86162f79/artifacts
+end_time: 1720806923424
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: e7d7ab6a2af14626b21da40a86162f79
+run_name: angry-elk-422
+run_uuid: e7d7ab6a2af14626b21da40a86162f79
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720806922124
+status: 3
+tags: []
+user_id: kr0pt

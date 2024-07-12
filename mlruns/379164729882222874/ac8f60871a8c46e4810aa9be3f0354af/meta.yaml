@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/ac8f60871a8c46e4810aa9be3f0354af/artifacts
+end_time: 1720805743972
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: ac8f60871a8c46e4810aa9be3f0354af
+run_name: masked-dolphin-450
+run_uuid: ac8f60871a8c46e4810aa9be3f0354af
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720805738219
+status: 3
+tags: []
+user_id: kr0pt
