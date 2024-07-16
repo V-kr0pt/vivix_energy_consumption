@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/2382699e8d694890a27c22df15d9ff39/artifacts
+end_time: 1721157938851
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: 2382699e8d694890a27c22df15d9ff39
+run_name: mercurial-grub-894
+run_uuid: 2382699e8d694890a27c22df15d9ff39
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721157937139
+status: 3
+tags: []
+user_id: kr0pt
