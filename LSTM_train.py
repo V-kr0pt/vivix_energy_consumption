@@ -1,6 +1,8 @@
 import mlflow
 from mlflow.models import infer_signature
 
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+
 from utils.preprocess import Preprocess
 from utils.load_data import LoadData 
 from utils.model_utils import Model_utils 
@@ -8,7 +10,7 @@ from utils.model_utils import Model_utils
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
 
-comments = 'Saving the error by epoch plot'
+comments = '1st grid search'
 
 
 # Load data
@@ -33,16 +35,34 @@ X_train = preprocessor.fit_transform(X_train)
 #X_train, y_train = self.create_sequences(X_train, y_train, self.params['seq_length'])
 
 # Create and train the model
-params = {'input_size': X_train.shape[1],
-          'hidden_layer_size': 100,
-          'output_size': 1,
-          'num_layers': 1,
-          'learning_rate': 0.001,
-          'epochs': 10}
+#params = {'input_size': X_train.shape[1],
+#          'hidden_layer_size': 100,
+#          'output_size': 1,
+#          'num_layers': 1,
+#          'learning_rate': 0.001,
+#          'epochs': 10}
+
+param_grid = {'hidden_layer_size': [10, 100, 500, 1000],
+               'num_layers': [1, 10, 20],
+               'learning_rate': [0.001, 0.01, 0.1],
+               'epochs': [10, 20, 30, 40, 50]}
 
 
-lstm_model = LSTMModel(**params)
+#lstm_model = LSTMModel(**params)
+#lstm_model.fit(X_train, y_train)
+
+lstm_model = LSTMModel(input_size=X_train.shape[1])
 model_name = lstm_model.model.model_name
+
+# grid search
+tscv = TimeSeriesSplit(n_splits=10)
+grid_search = GridSearchCV(estimator=lstm_model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error',
+                            n_jobs=-1, verbose=1)
+grid_search.fit(X_train, y_train)
+
+# Obtain the best parameters
+params = grid_search.best_params_
+lstm_model = lstm_model.set_params(**params)
 lstm_model.fit(X_train, y_train)
 
 # Test the model

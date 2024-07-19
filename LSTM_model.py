@@ -74,11 +74,12 @@ class LSTM_model(torch.nn.Module):
 
 # To be possible to use GridSearchCV
 class LSTMModelWrapper(BaseEstimator, RegressorMixin):
-    def __init__(self, input_size=1, hidden_layer_size=50, num_layers=1, output_size=1, learning_rate=0.001, epochs=10, verbose=False):
+    def __init__(self, input_size, hidden_layer_size=50, num_layers=1, output_size=1, learning_rate=0.001, epochs=10, verbose=False):
         self.hidden_layer_size = hidden_layer_size
         self.num_layers = num_layers
         self.learning_rate = learning_rate
         self.epochs = epochs
+        self.input_size = input_size
         self.output_size = output_size
         self.verbose = verbose
         self.model = LSTM_model({
