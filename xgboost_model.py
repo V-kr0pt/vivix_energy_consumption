@@ -8,35 +8,35 @@ from utils.load_data import LoadData
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = 'shuffle data + 7 lag media_diario + 2 lag all features, 3 splits'
+comments = '7 lag media_diario + 2 lag all features; shuffle train data = True with seed'
 model_name = 'xgboost'
 
 load_data = LoadData()
 
 # load train/validation data
-train_data = load_data.data
+data = load_data.data
 
-preprocess = Preprocess(train_data, load_data.numerical_features, load_data.categorical_features,
+preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
                          load_data.boolean_features, load_data.target)
 
 # lagging columns
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
 lag_columns_list += load_data.features
-lag_values += [1,2] * len(load_data.features)
+lag_values += [1, 2] * len(load_data.features)
 
 # create the lagged columns in data
-train_data = preprocess.create_lag_columns(lag_columns_list, lag_values)
-train_data = train_data.iloc[7:]
+data = preprocess.create_lag_columns(lag_columns_list, lag_values)
+data = data.iloc[7:]
 
 # shuffling data
-#train_data = train_data.sample(frac=1).reset_index(drop=True)
+data = data.sample(frac=1, random_state=42).reset_index(drop=True)
 
 features = preprocess.features
 target = preprocess.target
 
-X_train = train_data[features]
-y_train = train_data[target]
+X_train = data[features]
+y_train = data[target]
 
 # Scale is not needed for XGBoost (it is a tree-based model)
 preprocessor = preprocess.create_preprocessor(scale_std=False, scale_minmax=False)

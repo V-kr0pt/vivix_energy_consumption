@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/0f7e87517b4e4531a732649a92d38868/artifacts
+end_time: 1721400179542
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: 0f7e87517b4e4531a732649a92d38868
+run_name: rumbling-lynx-57
+run_uuid: 0f7e87517b4e4531a732649a92d38868
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721400178290
+status: 3
+tags: []
+user_id: kr0pt
