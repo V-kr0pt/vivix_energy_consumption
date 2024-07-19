@@ -35,7 +35,36 @@ class LSTM_model:
         # Fully connected layer
         # to map the output of the LSTM to the output size    
         self.fc = torch.nn.Linear(hidden_layer_size, output_size) 
+       
+    def forward_pass(self, x):
+        lstm_out, _ = self.model(x)
+        out = self.fc(lstm_out)
+        return out.view(-1) # to be an array and not a 1 column matrix
+
+    def fit(self, X_train, y_train, epochs=10, batch_size=64):
+        criterion = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.model_params['learning_rate'])
+
+        train_loader = self.create_Dataloader(X_train, y_train, batch_size)
+
+        self.model.train()
+        for epoch in range(epochs):
+            epoch_loss = 0
+            for (X_batch, y_batch) in train_loader:
+                optimizer.zero_grad()
+                output = self.forward_pass(X_batch)
+                loss = criterion(output, y_batch)
+                loss.backward()
+                optimizer.step()
+                epoch_loss += loss.item()
+            print(f'Epoch: {epoch}, Loss: {epoch_loss}')
     
+  
+    def predict():
+        pass
+    
+    
+    # utils
     def create_Dataloader(self, X, y, batch_size=32):
         # Create DataLoader for batching
         dataset = TensorDataset(X, y)
@@ -50,29 +79,7 @@ class LSTM_model:
             X_seq.append(X[i:i+seq_length])
             y_seq.append(y[i+seq_length])
         return X_seq, y_seq
-    
-    def forward_pass(self, x):
-        lstm_out, _ = self.model(x)
-        out = self.fc(lstm_out)
-        return out.view(-1) # to be an array and not a 1 column matrix
 
-    def train_model(self, train_loader):
-        criterion = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.model_params['learning_rate'])
-
-        self.model.train()
-        for epoch in range(self.model_params['num_epochs']):
-            epoch_loss = 0
-            for (X_batch, y_batch) in train_loader:
-                optimizer.zero_grad()
-                output = self.forward_pass(X_batch)
-                loss = criterion(output, y_batch)
-                loss.backward()
-                optimizer.step()
-                epoch_loss += loss.item()
-            print(f'Epoch: {epoch}, Loss: {epoch_loss}')
-    
-  
     def calculate_metrics(self, y_test, y_pred):
         mae = mean_absolute_error(y_test, y_pred)
         mse = mean_squared_error(y_test, y_pred)
@@ -161,12 +168,13 @@ class LSTM_model:
             signature = infer_signature(X_train.detach().numpy(),
                                          self.forward_pass(X_train).detach().numpy())
 
-            mlflow.pytorch.log_model(self.model,
-                                      self.model_name, signature=signature)
+            mlflow.pytorch.log_model(self.model, self.model_name,
+                                    registered_model_name=self.model_name,
+                                    signature=signature)
         
 
 if __name__ == "__main__":
-    comments = 'First run'
+    comments = 'Trying to put the model name in MLflow log'
 
     model_params = {'input_size': 1,
                 'hidden_layer_size': 100,
