@@ -1,42 +1,34 @@
 import torch
-from torch.utils.data import DataLoader, TensorDataset
-
-
-
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.base import BaseEstimator, RegressorMixin
-
 from utils.model_utils import Model_utils 
 
 
-
 class LSTM_model:
-
     def __init__(self, model_params: dict, model_name: str = "LSTM"):
         self.model_utils = Model_utils()
-        
         self.model = None
         self.model_name = model_name 
         self.model_params = model_params
            
+
     def create_model(self, input_size):
         hidden_layer_size = self.model_params['hidden_layer_size']
         num_layers = self.model_params['num_layers']
         output_size = self.model_params['output_size']
-        #seq_length = self.model_params['seq_length']
 
+        # LSTM model and a fully connected layer
+        # to map the output of the LSTM to the output size    
         self.model = torch.nn.LSTM(input_size=input_size,
                                     hidden_size=hidden_layer_size, 
                                     num_layers=num_layers, batch_first=True)
-        
-        # Fully connected layer
-        # to map the output of the LSTM to the output size    
         self.fc = torch.nn.Linear(hidden_layer_size, output_size) 
-       
+
+
     def forward_pass(self, x):
         lstm_out, _ = self.model(x)
         out = self.fc(lstm_out) 
         return out.view(-1) # to be an array and not a 1 column matrix
+
 
     def fit(self, X_train, y_train, epochs=10, batch_size=64):
         criterion = torch.nn.MSELoss()
@@ -46,7 +38,7 @@ class LSTM_model:
         X_train = torch.from_numpy(X_train).float()
         y_train = torch.from_numpy(y_train).float()   
         # Create Dataloader
-        train_loader = self.create_Dataloader(X_train, y_train, batch_size)
+        train_loader = self.model_utils.create_Dataloader(X_train, y_train, batch_size)
 
         self.model.train()
         for epoch in range(epochs):
@@ -59,8 +51,8 @@ class LSTM_model:
                 optimizer.step()
                 epoch_loss += loss.item()
             print(f'Epoch: {epoch}, Loss: {epoch_loss}')
-    
-  
+     
+
     def predict(self, X_test):
         # transform to Tensor
         X_test = torch.from_numpy(X_test).float()
@@ -71,30 +63,7 @@ class LSTM_model:
         
         # return the prediction as a numpy array
         return predictions.detach().numpy()
-    
-    # utils (should I create this functions in model_utils.py ?)
-    def create_Dataloader(self, X, y, batch_size=32):
-        # Create DataLoader for batching
-        dataset = TensorDataset(X, y)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-        return dataloader
-
-    def create_sequences(self, X, y):
-        seq_length = self.model_params['seq_length']
-        X_seq = []
-        y_seq = []
-        for i in range(len(X) - seq_length):
-            X_seq.append(X[i:i+seq_length])
-            y_seq.append(y[i+seq_length])
-        return X_seq, y_seq
-
-    def calculate_metrics(self, y_test, y_pred):
-        mae = mean_absolute_error(y_test, y_pred)
-        mse = mean_squared_error(y_test, y_pred)
-        rmse = mse**0.5
-        r2 = r2_score(y_test, y_pred)
-        return mae, mse, rmse, r2
-           
+               
 
 # To be possible to use GridSearchCV
 class LSTMModelWrapper(BaseEstimator, RegressorMixin):
@@ -111,11 +80,13 @@ class LSTMModelWrapper(BaseEstimator, RegressorMixin):
             'output_size': output_size
         })
 
+
     def fit(self, X, y):
         input_size = X.shape[1]
         self.model.create_model(input_size)
         self.model.fit(X, y, self.epochs)
         return self
+
 
     def predict(self, X):
         return self.model.predict(X)
