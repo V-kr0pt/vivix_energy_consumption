@@ -8,13 +8,7 @@ from utils.model_utils import Model_utils
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
 
-comments = ''
-
-params = {'hidden_layer_size': 100,
-          'output_size': 1,
-          'num_layers': 1,
-          'learning_rate': 0.001,
-          'epochs': 10}
+comments = 'Saving the error by epoch plot'
 
 
 # Load data
@@ -39,6 +33,14 @@ X_train = preprocessor.fit_transform(X_train)
 #X_train, y_train = self.create_sequences(X_train, y_train, self.params['seq_length'])
 
 # Create and train the model
+params = {'input_size': X_train.shape[1],
+          'hidden_layer_size': 100,
+          'output_size': 1,
+          'num_layers': 1,
+          'learning_rate': 0.001,
+          'epochs': 10}
+
+
 lstm_model = LSTMModel(**params)
 model_name = lstm_model.model.model_name
 lstm_model.fit(X_train, y_train)
@@ -58,10 +60,11 @@ y_pred = lstm_model.predict(X_test)
 # Calculate the metrics
 model_utils = Model_utils()
 mae, mse, rmse, r2 = model_utils.calculate_metrics(y_test, y_pred)
-plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name)
+pred_plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name)
 print(f'MAE: {mae}, MSE: {mse}, RMSE: {rmse}, R2: {r2}')
 
-
+# Plotting the Error by epoch
+error_plot_path = model_utils.plot_error_by_epoch(lstm_model.model.train_losses, model_name)
 
 ## Tracking experiments with MLflow
 
@@ -84,17 +87,17 @@ with mlflow.start_run():
     # Log hyperparams
     mlflow.log_params(params)
 
-    # Save the prediction plot
-    mlflow.log_artifact(plot_path)
+    # Save the prediction and the error by epoch plot
+    mlflow.log_artifact(pred_plot_path)
+    mlflow.log_artifact(error_plot_path)
     
     # Set a tag that we can use to remind ourselves what this run was for
     mlflow.set_tag("Training Info", comments)
 
     # Infer the model signature
-    signature = infer_signature(X_train.detach().numpy(),
-                                    lstm_model.predict(X_train))
+    signature = infer_signature(X_train, lstm_model.predict(X_train))
 
-    mlflow.pytorch.log_model(lstm_model, model_name,
+    mlflow.pytorch.log_model(lstm_model.model, model_name,
                             registered_model_name=model_name,
                             signature=signature)
     
