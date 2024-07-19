@@ -9,6 +9,7 @@ class LSTM_model:
         self.model = None
         self.model_name = model_name 
         self.model_params = model_params
+        self.train_losses = []  # Store training losses for each epoch
            
 
     def create_model(self, input_size):
@@ -30,7 +31,7 @@ class LSTM_model:
         return out.view(-1) # to be an array and not a 1 column matrix
 
 
-    def fit(self, X_train, y_train, epochs=10, batch_size=64):
+    def fit(self, X_train, y_train, epochs=10, batch_size=64, verbose=False):
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.model_params['learning_rate'])
 
@@ -50,7 +51,12 @@ class LSTM_model:
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
-            print(f'Epoch: {epoch}, Loss: {epoch_loss}')
+
+            avg_epoch_loss = epoch_loss / len(train_loader)
+            self.train_losses.append(avg_epoch_loss)
+            
+            if verbose:
+                print(f'Epoch: {epoch}, Loss: {avg_epoch_loss}')
      
 
     def predict(self, X_test):
@@ -67,12 +73,13 @@ class LSTM_model:
 
 # To be possible to use GridSearchCV
 class LSTMModelWrapper(BaseEstimator, RegressorMixin):
-    def __init__(self, hidden_layer_size=50, num_layers=1, output_size=1, learning_rate=0.001, epochs=10):
+    def __init__(self, hidden_layer_size=50, num_layers=1, output_size=1, learning_rate=0.001, epochs=10, verbose=False):
         self.hidden_layer_size = hidden_layer_size
         self.num_layers = num_layers
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.output_size = output_size
+        self.verbose = verbose
         self.model = LSTM_model({
             'hidden_layer_size': hidden_layer_size,
             'num_layers': num_layers,
@@ -84,7 +91,7 @@ class LSTMModelWrapper(BaseEstimator, RegressorMixin):
     def fit(self, X, y):
         input_size = X.shape[1]
         self.model.create_model(input_size)
-        self.model.fit(X, y, self.epochs)
+        self.model.fit(X, y, self.epochs, verbose=self.verbose)
         return self
 
 
