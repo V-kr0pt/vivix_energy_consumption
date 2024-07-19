@@ -1,26 +1,23 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-import mlflow
-from mlflow.models import infer_signature
+
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.base import BaseEstimator, RegressorMixin
 
 from utils.model_utils import Model_utils 
-from utils.load_data import LoadData 
-from utils.preprocess import Preprocess
+
 
 
 class LSTM_model:
 
-    def __init__(self, model_params: dict, comments: str):
+    def __init__(self, model_params: dict, model_name: str = "LSTM"):
         self.model_utils = Model_utils()
-        self.load_data = LoadData()
         
         self.model = None
-        self.model_name = "LSTM"
+        self.model_name = model_name 
         self.model_params = model_params
-        self.comments = comments
            
     def create_model(self, input_size):
         hidden_layer_size = self.model_params['hidden_layer_size']
@@ -38,33 +35,44 @@ class LSTM_model:
        
     def forward_pass(self, x):
         lstm_out, _ = self.model(x)
-        out = self.fc(lstm_out)
+        out = self.fc(lstm_out) 
         return out.view(-1) # to be an array and not a 1 column matrix
 
     def fit(self, X_train, y_train, epochs=10, batch_size=64):
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.model_params['learning_rate'])
 
+        # transform to Tensor
+        X_train = torch.from_numpy(X_train).float()
+        y_train = torch.from_numpy(y_train).float()   
+        # Create Dataloader
         train_loader = self.create_Dataloader(X_train, y_train, batch_size)
 
         self.model.train()
         for epoch in range(epochs):
             epoch_loss = 0
-            for (X_batch, y_batch) in train_loader:
+            for inputs, targets in train_loader:
                 optimizer.zero_grad()
-                output = self.forward_pass(X_batch)
-                loss = criterion(output, y_batch)
+                output = self.forward_pass(inputs)
+                loss = criterion(output, targets)
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
             print(f'Epoch: {epoch}, Loss: {epoch_loss}')
     
   
-    def predict():
-        pass
+    def predict(self, X_test):
+        # transform to Tensor
+        X_test = torch.from_numpy(X_test).float()
+        
+        self.model.eval()
+        with torch.no_grad():
+            predictions = self.forward_pass(X_test)
+        
+        # return the prediction as a numpy array
+        return predictions.detach().numpy()
     
-    
-    # utils
+    # utils (should I create this functions in model_utils.py ?)
     def create_Dataloader(self, X, y, batch_size=32):
         # Create DataLoader for batching
         dataset = TensorDataset(X, y)
@@ -86,103 +94,31 @@ class LSTM_model:
         rmse = mse**0.5
         r2 = r2_score(y_test, y_pred)
         return mae, mse, rmse, r2
-    
-    def run(self):
-         # Load data
-        data_train = self.load_data.data        
-        # Create the preprocess object and the preprocessor
-        preprocess = Preprocess(data_train, self.load_data.numerical_features, self.load_data.categorical_features,
-                                self.load_data.boolean_features, self.load_data.target)
-        preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=False, scale_minmax=False)
-              
-        # Features and target split
-        features = self.load_data.features
-        target = self.load_data.target
+           
 
-        X_train = data_train[features] # the train data is converted to a numpy array after the fit_transform of the preprocessor
-        y_train = data_train[target].to_numpy() # Convert to numpy array
-        
-        # Preprocess the data
-        X_train = preprocessor.fit_transform(X_train)        
-        
-        # Create sequences (should I create this function in model_utils.py ?)
-        #X_train, y_train = self.create_sequences(X_train, y_train, self.model_params['seq_length'])
-        
-        # Create DataLoader
-        X_train = torch.from_numpy(X_train).float()
-        y_train = torch.from_numpy(y_train).float()
-        train_dataloader = self.create_Dataloader(X_train, y_train)
-        
-        # Create and train the model
-        self.create_model(input_size=X_train.shape[1])
-        self.train_model(train_dataloader)
+# To be possible to use GridSearchCV
+class LSTMModelWrapper(BaseEstimator, RegressorMixin):
+    def __init__(self, hidden_layer_size=50, num_layers=1, output_size=1, learning_rate=0.001, epochs=10):
+        self.hidden_layer_size = hidden_layer_size
+        self.num_layers = num_layers
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.output_size = output_size
+        self.model = LSTM_model({
+            'hidden_layer_size': hidden_layer_size,
+            'num_layers': num_layers,
+            'learning_rate': learning_rate,
+            'output_size': output_size
+        })
 
-        # Test the model
-        data_test = self.load_data.last_month_data
+    def fit(self, X, y):
+        input_size = X.shape[1]
+        self.model.create_model(input_size)
+        self.model.fit(X, y, self.epochs)
+        return self
 
-        X_test = data_test[features]
-        y_test = data_test[target].to_numpy()
+    def predict(self, X):
+        return self.model.predict(X)
 
-        # preprocess the test data
-        X_test = preprocessor.transform(X_test)
 
-        X_test = torch.from_numpy(X_test).float()
-        y_test = torch.from_numpy(y_test).float()       
-        
-        y_pred = self.forward_pass(X_test)
-        
-        # Transform the predictions to numpy
-        y_pred = y_pred.detach().numpy()
-        y_test = y_test.detach().numpy()
 
-        # Calculate the metrics
-        mae, mse, rmse, r2 = self.calculate_metrics(y_test, y_pred)
-        plot_path = self.model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, self.model_name)
-        print(f'MAE: {mae}, MSE: {mse}, RMSE: {rmse}, R2: {r2}')
-        
-        # Set our tracking server uri for logging
-        host = "127.0.0.1"
-        port = 8080
-        mlflow.set_tracking_uri(uri=f"http://{host}:{port}")
-
-        # Create a new MLflow Experiment
-        mlflow.set_experiment("MLflow Vivix")
-        with mlflow.start_run():
-
-            # Log metrics
-            mlflow.log_metric('MAE', mae)
-            mlflow.log_metric('MSE', mse)
-            mlflow.log_metric('RMSE', rmse)
-            mlflow.log_metric('R2', r2)
-            
-            # Log hyperparams
-            mlflow.log_params(self.model_params)
-
-            # Save the prediction plot
-            mlflow.log_artifact(plot_path)
-            
-            # Set a tag that we can use to remind ourselves what this run was for
-            mlflow.set_tag("Training Info", self.comments)
-
-            # Infer the model signature
-            signature = infer_signature(X_train.detach().numpy(),
-                                         self.forward_pass(X_train).detach().numpy())
-
-            mlflow.pytorch.log_model(self.model, self.model_name,
-                                    registered_model_name=self.model_name,
-                                    signature=signature)
-        
-
-if __name__ == "__main__":
-    comments = 'Trying to put the model name in MLflow log'
-
-    model_params = {'input_size': 1,
-                'hidden_layer_size': 100,
-                'output_size': 1,
-                'num_layers': 1,
-                'seq_length': 1,
-                'learning_rate': 0.001,
-                'num_epochs': 10}
-    
-    lstm = LSTM_model(model_params, comments)
-    lstm.run()
