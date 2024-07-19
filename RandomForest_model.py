@@ -8,7 +8,7 @@ from utils.load_data import LoadData
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = '7 lags medio_diario + 1 lag all features'
+comments = '7 lags medio_diario + 1 lag all features; shuffle train data = True with seed'
 model_name = 'Random_Forest'
 
 # load train/validation data
@@ -22,11 +22,14 @@ preprocess = Preprocess(data, load_data.numerical_features, load_data.categorica
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
 lag_columns_list += load_data.features
-lag_values += [1] * len(load_data.features)
+lag_values += [1,2] * len(load_data.features)
 
 # create the lagged columns in data
 data = preprocess.create_lag_columns(lag_columns_list, lag_values)
 data = data.iloc[7:]
+
+# shuffling data
+data = data.sample(frac=1, random_state=42).reset_index(drop=True)
 
 features = preprocess.features
 target = preprocess.target
@@ -46,38 +49,37 @@ X_train = preprocessor.fit_transform(X_train)
 # Train the model
 
 # Define the parameter grid for grid search
-param_grid = {
-    'n_estimators': [400, 500, 600, 700],
-    'max_depth': [None, 5, 10, 15],
-    'min_samples_split': [2, 5],
-    'min_samples_leaf': [1, 2, 4],
-    'max_features': [1, 'sqrt', 'log2'],
-    'random_state': [42]
-}
+#param_grid = {
+#    'n_estimators': [400, 500, 600, 700],
+#    'max_depth': [None, 5, 10, 15],
+#    'min_samples_split': [2, 5],
+#    'min_samples_leaf': [1, 2, 4],
+#    'max_features': [1, 'sqrt', 'log2'],
+#    'random_state': [42]
+#}
 
 # Define the parameters
-#params = {
-#    'n_estimators':400,
-#    'max_depth':10,
-#    'min_samples_split':2,
-#    'min_samples_leaf':1,
-#    'max_features':'sqrt',
-#    'random_state':42
-#}
+params = {
+    'n_estimators':600,
+    'max_depth':None,
+    'min_samples_split':2,
+    'min_samples_leaf':1,
+    'max_features':'sqrt',
+    'random_state':42
+}
 
 # Create the Random Forest model
 model = RandomForestRegressor()#RandomForestRegressor(**params)
 
 # TimeSeriesSplit Config
-tscv = TimeSeriesSplit(n_splits=10)
+#tscv = TimeSeriesSplit(n_splits=10)
 
 # Train the model
-grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
-grid_search.fit(X_train, y_train)
-#model.fit(X_train, y_train)
+#grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
+#grid_search.fit(X_train, y_train)
 
 # Set the best parameters 
-params = grid_search.best_params_
+#params = grid_search.best_params_
 model = model.set_params(**params)
 model.fit(X_train, y_train)
 

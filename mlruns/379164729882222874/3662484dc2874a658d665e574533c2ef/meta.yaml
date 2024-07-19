@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/3662484dc2874a658d665e574533c2ef/artifacts
+end_time: 1721403096547
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: 3662484dc2874a658d665e574533c2ef
+run_name: amazing-kite-584
+run_uuid: 3662484dc2874a658d665e574533c2ef
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721403095177
+status: 3
+tags: []
+user_id: kr0pt
