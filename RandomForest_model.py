@@ -8,7 +8,7 @@ from utils.load_data import LoadData
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = '7 lags medio_diario + 1 lag all features; shuffle train data = True with seed'
+comments = '7 lags medio_diario + 1 lag all features; shuffle train data = False'
 model_name = 'Random_Forest'
 
 # load train/validation data
@@ -29,7 +29,7 @@ data = preprocess.create_lag_columns(lag_columns_list, lag_values)
 data = data.iloc[7:]
 
 # shuffling data
-data = data.sample(frac=1, random_state=42).reset_index(drop=True)
+#data = data.sample(frac=1, random_state=42).reset_index(drop=True)
 
 features = preprocess.features
 target = preprocess.target
@@ -58,7 +58,7 @@ X_train = preprocessor.fit_transform(X_train)
 #    'random_state': [42]
 #}
 
-# Define the parameters
+# Define the parameters (best model)
 params = {
     'n_estimators':600,
     'max_depth':None,
