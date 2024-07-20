@@ -1,6 +1,7 @@
 import torch
 from sklearn.base import BaseEstimator, RegressorMixin
 from torch.utils.data import DataLoader, TensorDataset
+from torch.optim.lr_scheduler import StepLR
 
 
 class LSTM_model(torch.nn.Module):
@@ -34,6 +35,7 @@ class LSTM_model(torch.nn.Module):
     def fit(self, X_train, y_train, epochs=10, batch_size=64, verbose=False):
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.model_params['learning_rate'])
+        scheduler = StepLR(optimizer, step_size=20, gamma=0.1) # learning rate scheduler
 
         # transform to Tensor
         X_train = torch.from_numpy(X_train).float()
@@ -55,6 +57,7 @@ class LSTM_model(torch.nn.Module):
 
             avg_epoch_loss = epoch_loss / len(train_loader)
             self.train_losses.append(avg_epoch_loss)
+            scheduler.step() # update learning rate
             
             if verbose:
                 print(f'Epoch: {epoch}, Loss: {avg_epoch_loss}')
