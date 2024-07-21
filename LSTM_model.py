@@ -32,7 +32,7 @@ class LSTM_model(torch.nn.Module):
         return out.view(-1) # to be an array and not a 1 column matrix
 
 
-    def fit(self, X_train, y_train, epochs=10, batch_size=64, verbose=False):
+    def fit(self, X_train, y_train, epochs=10, batch_size=32, verbose=False):
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.model_params['learning_rate'])
         scheduler = StepLR(optimizer, step_size=20, gamma=0.1) # learning rate scheduler
