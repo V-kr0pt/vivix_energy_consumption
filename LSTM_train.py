@@ -2,6 +2,7 @@ import mlflow
 from mlflow.models import infer_signature
 
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+from sklearn.preprocessing import MinMaxScaler#, StandardScaler
 
 from utils.preprocess import Preprocess
 from utils.load_data import LoadData 
@@ -10,7 +11,7 @@ from utils.model_utils import Model_utils
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
 
-comments = '1st grid search'
+comments = 'scale_minmax X and y; batch_size=32; lr_schedule after 20 epochs 10percent reduction; target lag; grid search'
 
 
 # Load data
@@ -19,17 +20,28 @@ data = load_data.data
 # Create the preprocess object and the preprocessor
 preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
                         load_data.boolean_features, load_data.target)
-preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=False, scale_minmax=False)
-        
+x_preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=False, scale_minmax=True)
+
+
+# lagging columns
+lag_columns_list = ['medio_diario']*7
+lag_values = [1, 2, 3, 4, 5, 6, 7]
+
+# create the lagged columns in data
+data = preprocess.create_lag_columns(lag_columns_list, lag_values)
+data = data.iloc[7:]
+
 # Features and target split
-features = load_data.features
-target = load_data.target
+features = preprocess.features
+target = preprocess.target
 
 X_train = data[features] # the train data is converted to a numpy array after the fit_transform of the preprocessor
 y_train = data[target].to_numpy() # Convert to numpy array
 
 # Preprocess the data
-X_train = preprocessor.fit_transform(X_train)        
+X_train = x_preprocessor.fit_transform(X_train)  
+y_scaler = MinMaxScaler()
+y_train = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()  
 
 # Create sequences 
 #X_train, y_train = self.create_sequences(X_train, y_train, self.params['seq_length'])
@@ -42,9 +54,9 @@ X_train = preprocessor.fit_transform(X_train)
 #          'learning_rate': 0.001,
 #          'epochs': 10}
 
-param_grid = {'hidden_layer_size': [10, 100, 500, 1000],
-               'num_layers': [1, 10, 20],
-               'learning_rate': [0.001, 0.01, 0.1],
+param_grid = {'hidden_layer_size': [1000, 1500, 2000, 2500, 3000, 5000],
+               'num_layers': [30, 50, 60, 80, 100],
+               'learning_rate': [0.0001, 0.0005, 0.001, 0.01, 0.1],
                'epochs': [10, 20, 30, 40, 50]}
 
 
@@ -66,16 +78,21 @@ lstm_model = lstm_model.set_params(**params)
 lstm_model.fit(X_train, y_train)
 
 # Test the model
-data_test = load_data.last_month_data
+test_data = load_data.last_month_data
 
-X_test = data_test[features]
-y_test = data_test[target].to_numpy()
+# create the lagged columns in data
+test_data = preprocess.create_lag_columns(lag_columns_list, lag_values, data=test_data)
+test_data = test_data.iloc[7:]
+
+X_test = test_data[features]
+y_test = test_data[target].to_numpy()
 
 # preprocess the test data
-X_test = preprocessor.transform(X_test)
+X_test = x_preprocessor.transform(X_test)
 
 # predict
 y_pred = lstm_model.predict(X_test)
+y_pred = y_scaler.inverse_transform(y_pred.reshape(-1, 1)).flatten()
 
 # Calculate the metrics
 model_utils = Model_utils()

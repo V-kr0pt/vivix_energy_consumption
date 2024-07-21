@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/bed46dd46a0044ae9f4270710dcf85b3/artifacts
+end_time: 1721588999573
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: bed46dd46a0044ae9f4270710dcf85b3
+run_name: burly-swan-158
+run_uuid: bed46dd46a0044ae9f4270710dcf85b3
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721588997063
+status: 3
+tags: []
+user_id: kr0pt

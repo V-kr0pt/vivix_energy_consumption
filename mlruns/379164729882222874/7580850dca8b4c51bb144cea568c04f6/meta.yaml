@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/7580850dca8b4c51bb144cea568c04f6/artifacts
+end_time: 1721590900037
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: 7580850dca8b4c51bb144cea568c04f6
+run_name: bald-squirrel-458
+run_uuid: 7580850dca8b4c51bb144cea568c04f6
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721590897695
+status: 3
+tags: []
+user_id: kr0pt
