@@ -11,7 +11,7 @@ from utils.model_utils import Model_utils
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
 
-comments = 'scale_minmax X and y; batch_size=32; lr_schedule after 20 epochs 10percent reduction; target lag; grid search'
+comments = 'batch_size on grid; scale_minmax X and y; lr_schedule after 20 epochs 10percent reduction; target lag; grid search'
 
 
 # Load data
@@ -54,16 +54,19 @@ y_train = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
 #          'learning_rate': 0.001,
 #          'epochs': 10}
 
-param_grid = {'hidden_layer_size': [1000, 1500, 2000, 2500, 3000, 5000],
-               'num_layers': [30, 50, 60, 80, 100],
-               'learning_rate': [0.0001, 0.0005, 0.001, 0.01, 0.1],
-               'epochs': [10, 20, 30, 40, 50]}
+param_grid = {    
+    'hidden_layer_size': [1000, 1500, 2000, 2500, 3000, 5000],
+    'num_layers': [30, 50, 60, 80, 100],
+    'learning_rate': [0.001, 0.01, 0.1],
+    'epochs': [20, 30, 40, 50, 60],
+    'batch_size': [8, 16, 32, 64]
+}
 
 
 #lstm_model = LSTMModel(**params)
 #lstm_model.fit(X_train, y_train)
 
-lstm_model = LSTMModel(input_size=X_train.shape[1])
+lstm_model = LSTMModel(input_size=X_train.shape[1], output_size=1)
 model_name = lstm_model.model.model_name
 
 # grid search
