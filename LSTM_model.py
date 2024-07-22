@@ -32,9 +32,9 @@ class LSTM_model(torch.nn.Module):
         return out.view(-1) # to be an array and not a 1 column matrix
 
 
-    def fit(self, X_train, y_train, epochs=10, batch_size=32, verbose=False):
+    def fit(self, X_train, y_train, epochs=10, batch_size=32, learning_rate=0.01, verbose=False):
         criterion = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.model_params['learning_rate'])
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
         scheduler = StepLR(optimizer, step_size=20, gamma=0.1) # learning rate scheduler
 
         # transform to Tensor
@@ -77,26 +77,34 @@ class LSTM_model(torch.nn.Module):
 
 # To be possible to use GridSearchCV
 class LSTMModelWrapper(BaseEstimator, RegressorMixin):
-    def __init__(self, input_size, hidden_layer_size=50, num_layers=1, output_size=1, learning_rate=0.001, epochs=10, verbose=False):
+    def __init__(self, input_size=1, hidden_layer_size=50, num_layers=1,
+                  output_size=1, learning_rate=0.001, epochs=10, batch_size=32, verbose=False):
+        
+        # LSTM model sizes
+        self.input_size = input_size
         self.hidden_layer_size = hidden_layer_size
         self.num_layers = num_layers
-        self.learning_rate = learning_rate
-        self.epochs = epochs
-        self.input_size = input_size
         self.output_size = output_size
+
+        # LSTM fit parameters
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
         self.verbose = verbose
+
+        # LSTM model
         self.model = LSTM_model({
+            'input_size': input_size,
             'hidden_layer_size': hidden_layer_size,
             'num_layers': num_layers,
-            'learning_rate': learning_rate,
-            'output_size': output_size,
-            'input_size': input_size
+            'output_size': output_size       
         })
 
 
     def fit(self, X, y):
         #self.model.input_size = X.shape[1]
-        self.model.fit(X, y, self.epochs, verbose=self.verbose)
+        self.model.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, 
+                       learning_rate=self.learning_rate, verbose=self.verbose)
         return self
 
 
