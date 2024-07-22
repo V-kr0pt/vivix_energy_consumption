@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/e76cff4065764999a5699dcf7f2e4cf4/artifacts
+end_time: 1721600941509
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: e76cff4065764999a5699dcf7f2e4cf4
+run_name: learned-ape-355
+run_uuid: e76cff4065764999a5699dcf7f2e4cf4
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721600938818
+status: 3
+tags: []
+user_id: kr0pt
