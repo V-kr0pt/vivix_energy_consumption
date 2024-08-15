@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/aeca1b4e5c3b4b8b8719c755fe04e395/artifacts
+end_time: 1721399815317
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: aeca1b4e5c3b4b8b8719c755fe04e395
+run_name: loud-wren-332
+run_uuid: aeca1b4e5c3b4b8b8719c755fe04e395
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721399814026
+status: 3
+tags: []
+user_id: kr0pt

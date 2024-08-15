@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/251e888c6f46400484ddcc9db051c39e/artifacts
+end_time: 1721399975890
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: 251e888c6f46400484ddcc9db051c39e
+run_name: stately-auk-697
+run_uuid: 251e888c6f46400484ddcc9db051c39e
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721399974484
+status: 3
+tags: []
+user_id: kr0pt

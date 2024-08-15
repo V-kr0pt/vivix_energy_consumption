@@ -8,32 +8,35 @@ from utils.load_data import LoadData
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = '7 lag media_diario + 2 lag all features, 10 splits'
+comments = '7 lag media_diario + 2 lag all features; shuffle train data = True with seed'
 model_name = 'xgboost'
 
 load_data = LoadData()
 
 # load train/validation data
-train_data = load_data.data
+data = load_data.data
 
-preprocess = Preprocess(train_data, load_data.numerical_features, load_data.categorical_features,
+preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
                          load_data.boolean_features, load_data.target)
 
 # lagging columns
 lag_columns_list = ['medio_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
 lag_columns_list += load_data.features
-lag_values += [1,2] * len(load_data.features)
+lag_values += [1, 2] * len(load_data.features)
 
 # create the lagged columns in data
 data = preprocess.create_lag_columns(lag_columns_list, lag_values)
 data = data.iloc[7:]
 
+# shuffling data
+data = data.sample(frac=1, random_state=42).reset_index(drop=True)
+
 features = preprocess.features
 target = preprocess.target
 
-X_train = train_data[features]
-y_train = train_data[target]
+X_train = data[features]
+y_train = data[target]
 
 # Scale is not needed for XGBoost (it is a tree-based model)
 preprocessor = preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
@@ -43,16 +46,28 @@ X_train = preprocessor.fit_transform(X_train)
 
 # Train the model
 # Define the parameter grid for grid search
+#param_grid = {
+#    'n_estimators': [700, 800, 900],
+#    'max_depth': [1, 2, 3],
+#    'learning_rate': [0.01],
+#    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
+#    'subsample': [0.4, 0.5, 0.6],
+#    'reg_alpha': [0.1, 0.2, 0.3, 0.4, 0.5], # L1 regularization
+#    'reg_lambda': [0, 0.01], # L2 regularization
+#    'random_state': [42]
+#}
+
 param_grid = {
-    'n_estimators': [700, 800, 900],
-    'max_depth': [1, 2, 3],
+    'n_estimators': [800],
+    'max_depth': [2],
     'learning_rate': [0.01],
     'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
-    'subsample': [0.4, 0.5, 0.6],
-    'reg_alpha': [0.1, 0.2, 0.3, 0.4, 0.5], # L1 regularization
-    'reg_lambda': [0, 0.01], # L2 regularization
+    'subsample': [0.5],
+    'reg_alpha': [0.5], # L1 regularization
+    'reg_lambda': [0.01], # L2 regularization
     'random_state': [42]
 }
+
 
 # Define the parameters
 #params = {
@@ -74,7 +89,7 @@ model = xgb.XGBRegressor() #xgb.XGBRegressor(**params)
 
 # Train the model
 # TimeSeriesSplit Config
-tscv = TimeSeriesSplit(n_splits=10)
+tscv = TimeSeriesSplit(n_splits=3)
 
 grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
 grid_search.fit(X_train, y_train)
