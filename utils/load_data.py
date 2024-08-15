@@ -8,15 +8,15 @@ class LoadData:
         # all in lower case
         data.columns = data.columns.str.lower()
 
-        data.rename(columns={
-            'ativa consumo (kwh)': 'consumo_kwh'
-        }, inplace=True)
+        # transform kWh to MWh
+        data['ativa consumo (kwh)'] = data['ativa consumo (kwh)'] / 1000
+        data.rename(columns={'ativa consumo (kwh)': 'consumo_mwh'}, inplace=True)        
 
         # create datetime column to group by and sum the consumption
         data['datetime'] = data.apply(self.adjust_time, axis=1)
 
         # Group by datetime and ponto_de_medicao
-        data = data.groupby(['datetime'])['consumo_kwh'].sum().reset_index()
+        data = data.groupby(['datetime'])['consumo_mwh'].sum().reset_index()
 
         # Standardize string columns to lowercase
         #data = data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
@@ -32,9 +32,9 @@ class LoadData:
         data['hour'] = data['datetime'].dt.hour
 
         # Now we only need the max consumation value from the day
-        data['consumo_max_diario'] = data.groupby(['year', 'month', 'day'])['consumo_kwh'].transform('max')
-        data = data[data['consumo_kwh'] == data['consumo_max_diario']]
-        data.drop(columns=['consumo_kwh'], inplace=True)
+        data['consumo_max_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('max')
+        data = data[data['consumo_mwh'] == data['consumo_max_diario']]
+        data.drop(columns=['consumo_mwh'], inplace=True)
 
         # Create a different dataframe with only the last month data (last 30 days)
         last_30_days = data['datetime'].max() - pd.Timedelta(days=30)
