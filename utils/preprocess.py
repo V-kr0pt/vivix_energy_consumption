@@ -56,7 +56,7 @@ class Preprocess:
             numeric_transformer = 'passthrough'
 
         # Transformer to categorical columns
-        categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore'))])
+        categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))])
 
         # Transformers pipeline
         transformers = [
