@@ -1,0 +1,1 @@
+7 lags medio_diario + 1 lag all features; shuffle train data = True with seed

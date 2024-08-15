@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1721403138574
+current_stage: None
+description: ''
+last_updated_timestamp: 1721403138574
+name: Random_Forest
+run_id: 15f0e88f26104538947f9fe273f5d87a
+run_link: ''
+source: mlflow-artifacts:/379164729882222874/15f0e88f26104538947f9fe273f5d87a/artifacts/vivix_model
+status: READY
+status_message: null
+storage_location: mlflow-artifacts:/379164729882222874/15f0e88f26104538947f9fe273f5d87a/artifacts/vivix_model
+user_id: null
+version: 7
