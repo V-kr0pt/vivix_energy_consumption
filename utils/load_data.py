@@ -38,8 +38,8 @@ class LoadData:
 
         # Create a different dataframe with only the last month data (last 30 days)
         last_30_days = data['datetime'].max() - pd.Timedelta(days=30)
-        self.last_month_data = data[data['datetime'] >= last_30_days]
-        self.data = data[data['datetime'] < last_30_days]
+        self.last_month_data = data.loc[data['datetime'] >= last_30_days].copy()
+        self.data = data.loc[data['datetime'] < last_30_days].copy()
 
         # Finally we can drop the datetime column
         self.data.drop(columns=['datetime'], inplace=True)
