@@ -4,5 +4,5 @@ notes
 model_test.ipynb
 .vscode
 docs
-vivix_venv
+venv
 __pycache__
