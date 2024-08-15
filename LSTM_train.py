@@ -11,7 +11,7 @@ from utils.model_utils import Model_utils
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
 
-comments = 'batch_size on grid; scale_minmax X and y; lr_schedule after 20 epochs 10percent reduction; target lag; grid search'
+comments = 'minmax=True, 7 lag target, grid_search'
 
 
 # Load data
@@ -24,15 +24,16 @@ x_preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=
 
 
 # lagging columns
-lag_columns_list = ['medio_diario']*7
+lag_columns_list = [load_data.target]*7  # load_data.target is the 'consumo_max_diario' column 
 lag_values = [1, 2, 3, 4, 5, 6, 7]
 
 # create the lagged columns in data
 data = preprocess.create_lag_columns(lag_columns_list, lag_values)
 data = data.iloc[7:]
 
-# Features and target split
-features = preprocess.features
+# Features and target split 
+# since now we have lagged columns we need to use the preprocess object to get the features
+features = preprocess.features 
 target = preprocess.target
 
 X_train = data[features] # the train data is converted to a numpy array after the fit_transform of the preprocessor
@@ -43,17 +44,6 @@ X_train = x_preprocessor.fit_transform(X_train)
 y_scaler = MinMaxScaler()
 y_train = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()  
 
-# Create sequences 
-#X_train, y_train = self.create_sequences(X_train, y_train, self.params['seq_length'])
-
-# Create and train the model
-#params = {'input_size': X_train.shape[1],
-#          'hidden_layer_size': 100,
-#          'output_size': 1,
-#          'num_layers': 1,
-#          'learning_rate': 0.001,
-#          'epochs': 10}
-
 param_grid = {    
     'hidden_layer_size': [1000, 1500, 2000, 2500, 3000, 5000],
     'num_layers': [30, 50, 60, 80, 100],
@@ -62,9 +52,6 @@ param_grid = {
     'batch_size': [8, 16, 32, 64]
 }
 
-
-#lstm_model = LSTMModel(**params)
-#lstm_model.fit(X_train, y_train)
 
 lstm_model = LSTMModel(input_size=X_train.shape[1], output_size=1)
 model_name = lstm_model.model.model_name
@@ -106,16 +93,16 @@ print(f'MAE: {mae}, MSE: {mse}, RMSE: {rmse}, R2: {r2}')
 # Plotting the Error by epoch
 error_plot_path = model_utils.plot_error_by_epoch(lstm_model.model.train_losses, model_name)
 
-## Tracking experiments with MLflow
+## --------------------- Tracking experiments with MLflow --------------
 
 # Set our tracking server uri for logging
-host = "127.0.0.1"
-port = 8080
-mlflow.set_tracking_uri(uri=f"http://{host}:{port}")
+dags_hub_url = 'https://dagshub.com/V-kr0pt/vivix_energy_consumption.mlflow'
+mlflow.set_tracking_uri(uri=dags_hub_url)
 
 
 # Create a new MLflow Experiment
-mlflow.set_experiment("MLflow Vivix")
+experiment = 'Demanda Regression'
+mlflow.set_experiment(experiment)
 with mlflow.start_run():
 
     # Log metrics
