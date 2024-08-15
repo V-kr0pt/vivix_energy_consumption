@@ -1,0 +1,25 @@
+artifact_path: LSTM
+flavors:
+  python_function:
+    config:
+      device: null
+    data: data
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pytorch
+    pickle_module_name: mlflow.pytorch.pickle_module
+    python_version: 3.10.12
+  pytorch:
+    code: null
+    model_data: data
+    pytorch_version: 2.3.1+cu118
+mlflow_version: 2.14.2
+model_size_bytes: 65104
+model_uuid: 91f085a4332e4a60b651f79716099d3d
+run_id: a62abb2976d24b80940f5bd909d60217
+signature:
+  inputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1, 24]}}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float32", "shape": [-1]}}]'
+  params: null
+utc_time_created: '2024-07-20 18:58:48.826983'

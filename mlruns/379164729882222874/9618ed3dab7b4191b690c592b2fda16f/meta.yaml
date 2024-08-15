@@ -1,0 +1,16 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/9618ed3dab7b4191b690c592b2fda16f/artifacts
+deleted_time: 1721180891963
+end_time: 1721180762591
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: deleted
+run_id: 9618ed3dab7b4191b690c592b2fda16f
+run_name: gentle-wasp-549
+run_uuid: 9618ed3dab7b4191b690c592b2fda16f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721180761690
+status: 4
+tags: []
+user_id: kr0pt

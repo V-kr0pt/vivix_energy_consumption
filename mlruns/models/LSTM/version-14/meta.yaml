@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1721590900025
+current_stage: None
+description: ''
+last_updated_timestamp: 1721590900025
+name: LSTM
+run_id: 7580850dca8b4c51bb144cea568c04f6
+run_link: ''
+source: mlflow-artifacts:/379164729882222874/7580850dca8b4c51bb144cea568c04f6/artifacts/LSTM
+status: READY
+status_message: null
+storage_location: mlflow-artifacts:/379164729882222874/7580850dca8b4c51bb144cea568c04f6/artifacts/LSTM
+user_id: null
+version: 14

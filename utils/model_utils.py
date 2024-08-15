@@ -170,3 +170,29 @@ class Model_utils:
             fig.savefig(plot_path)
 
         return plot_path
+
+    def create_sequences(self, X, y, seq_length):
+        X_seq = []
+        y_seq = []
+        for i in range(len(X) - seq_length):
+            X_seq.append(X[i:i+seq_length])
+            y_seq.append(y[i+seq_length])
+        return X_seq, y_seq
+
+    def calculate_metrics(self, y_test, y_pred):
+        mae = mean_absolute_error(y_test, y_pred)
+        mse = mean_squared_error(y_test, y_pred)
+        rmse = mse**0.5
+        r2 = r2_score(y_test, y_pred)
+        return mae, mse, rmse, r2
+    
+    def plot_error_by_epoch(self, train_losses, model_name):
+        sns.set_theme(style="darkgrid")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.lineplot(x=range(len(train_losses)), y=train_losses, ax=ax)
+        ax.set_title('Error by epoch')
+        ax.set_ylabel('Error')
+        ax.set_xlabel('Epoch')
+        plot_path = f'results/graphs/{model_name}_error_by_epoch.png'
+        fig.savefig(plot_path)
+        return plot_path

@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/e1ba7e8786404e07bc6ca7c638dafa7e/artifacts
+end_time: 1721417944595
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: active
+run_id: e1ba7e8786404e07bc6ca7c638dafa7e
+run_name: popular-penguin-974
+run_uuid: e1ba7e8786404e07bc6ca7c638dafa7e
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721417934301
+status: 3
+tags: []
+user_id: kr0pt

@@ -1,8 +1,9 @@
 artifact_uri: mlflow-artifacts:/379164729882222874/3dca44237e4044d88bf112bd9f703a30/artifacts
+deleted_time: 1721591061580
 end_time: 1720803778985
 entry_point_name: ''
 experiment_id: '379164729882222874'
-lifecycle_stage: active
+lifecycle_stage: deleted
 run_id: 3dca44237e4044d88bf112bd9f703a30
 run_name: worried-crab-354
 run_uuid: 3dca44237e4044d88bf112bd9f703a30

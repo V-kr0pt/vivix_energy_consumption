@@ -1,0 +1,16 @@
+artifact_uri: mlflow-artifacts:/379164729882222874/0f3385d2c4784ab6a5a82cb0e0c55bfc/artifacts
+deleted_time: 1721180891963
+end_time: 1721179971815
+entry_point_name: ''
+experiment_id: '379164729882222874'
+lifecycle_stage: deleted
+run_id: 0f3385d2c4784ab6a5a82cb0e0c55bfc
+run_name: invincible-foal-83
+run_uuid: 0f3385d2c4784ab6a5a82cb0e0c55bfc
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721179968599
+status: 4
+tags: []
+user_id: kr0pt
