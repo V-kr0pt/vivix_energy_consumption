@@ -1,1 +1,0 @@
-batch_size on grid; scale_minmax X and y; lr_schedule after 20 epochs 10percent reduction; target lag; grid search

@@ -1,1 +1,0 @@
-scale_minmax X and y; lr_schedule after 10 epochs 10percent reduction; target lag; grid search

@@ -1,1 +1,0 @@
-CORRECT 10: scale_minmax X and y; lr_schedule after 20 epochs 0.1 reduction; target lag; grid search
