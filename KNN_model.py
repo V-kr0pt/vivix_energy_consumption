@@ -7,9 +7,8 @@ from utils.model_utils import Model_utils
 from utils.load_data import LoadData 
 from utils.preprocess import Preprocess
 
-
 # comments to be saved in the history
-comments = '7 lagged media_diario + 1 lagged all features.'
+comments = '7 lagged media_diario + 1 lagged all features - scale_std = True, scale_minmax = False; Shuffle Train Data = False'
 load_data = LoadData()
 
 # load train/validation data
@@ -28,6 +27,9 @@ lag_values += [1]*len(preprocess.features)
 data = preprocess.create_lag_columns(lag_columns_list, lag_values)
 data = data.iloc[7:]
 
+# shuffle data
+#data = data.sample(frac=1).reset_index(drop=True)
+
 features = preprocess.features
 target = preprocess.target
 
@@ -43,38 +45,38 @@ X_train = preprocessor.fit_transform(X_train)
 # Train the model
 model_name = 'KNN'
 # Define the parameter grid for grid search
-param_grid = {
-    'algorithm': ['auto'],
-    'n_neighbors': [4, 5, 6, 7],
-    'weights': ['distance', 'uniform'],
-    'leaf_size': [1],
-    'p': [1, 2]
-}
-
-# Define the parameters
-#params = {
-#    'algorithm':'auto',
-#    'leaf_size':1,
-#    'n_neighbors':5,
-#    'p':1,
-#    'weights':'distance'
+#param_grid = {
+#    'algorithm': ['auto'],
+#    'n_neighbors': [4, 5, 6, 7],
+#    'weights': ['distance', 'uniform'],
+#    'leaf_size': [1],
+#    'p': [1, 2]
 #}
 
+# Define the parameters
+params = {
+    'algorithm':'auto',
+    'leaf_size':1,
+    'n_neighbors':5,
+    'p':2,
+    'weights':'distance'
+}
+
 # Create the KN-Regressor model
-model = knr() #knr(**params)
+model = knr(**params) #knr(**params)
 
 # Train the model
 # TimeSeriesSplit Config
 tscv = TimeSeriesSplit(n_splits=10)
 
-grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
-grid_search.fit(X_train, y_train)
-#model.fit(X_train, y_train)
-
+#grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
+#grid_search.fit(X_train, y_train)
 
 # Set the best parameters 
-params = grid_search.best_params_
-model = model.set_params(**params)
+#params = grid_search.best_params_
+#model = model.set_params(**params)
+
+# train the best model
 model.fit(X_train, y_train)
 
 ### Evaluate the model
