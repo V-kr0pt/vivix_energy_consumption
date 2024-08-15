@@ -126,7 +126,7 @@ class Model_utils:
 
 
     def plot_predictions(self, y_pred, y_true, mae, mse, rmse, r2, model_name,graph_name='prediction',
-                          graph_title='Consumo de energia médio diário do forno',
+                          graph_title='Consumo máximo de energia diária do Forno',
                           graph_ylabel='Consumo de energia (MWh/dia)',
                           save=True, save_path='results/graphs/', print_error=False):
         
