@@ -70,7 +70,7 @@ class LoadData:
 
         # Identify categorical and numerical columns
         self.boolean_features = ['prod_e', 'prod_l'] # Boolean columns
-        self.categorical_features = ['year', 'month', 'week_day', 'hour', 'day', 'cor', 'week_day']  # Categorical columns
+        self.categorical_features = ['year', 'month', 'week_day', 'hour', 'day', 'cor']  # Categorical columns
         self.numerical_features = ['boosting', 'espessura', 'extracao_forno', 'porcentagem_caco']   # Numerical columns
         
         # create a list with all features and the target
