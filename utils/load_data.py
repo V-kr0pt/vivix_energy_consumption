@@ -59,6 +59,9 @@ class LoadData:
         # the medio_diario is not useful anymore
         data.drop(columns=['medio_diario'], inplace=True)
 
+        ## we'll create binary classes for the consumption using 8.3 mWh as threshold
+        data['crossed_threshold'] = data['consumo_max_diario'].apply(lambda x: 1 if x >= 8.3 else 0)
+
         # Create a different dataframe with only the last month data (last 30 days)
         last_30_days = data['datetime'].max() - pd.Timedelta(days=30)
         self.last_month_data = data.loc[data['datetime'] >= last_30_days].copy()
@@ -75,7 +78,7 @@ class LoadData:
         
         # create a list with all features and the target
         self.features = self.numerical_features + self.categorical_features + self.boolean_features
-        self.target = 'consumo_max_diario'
+        self.target = 'crossed_threshold'
 
 
     def adjust_time(self, row):
