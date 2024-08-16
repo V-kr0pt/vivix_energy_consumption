@@ -32,10 +32,10 @@ class LSTM_model(torch.nn.Module):
         return out.view(-1) # to be an array and not a 1 column matrix
 
 
-    def fit(self, X_train, y_train, epochs=10, batch_size=32, learning_rate=0.01, verbose=False):
+    def fit(self, X_train, y_train, epochs=10, batch_size=32, learning_rate=0.01, weight_decay=0, verbose=False):
         criterion = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
-        scheduler = StepLR(optimizer, step_size=20, gamma=0.1) # learning rate scheduler
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+        scheduler = StepLR(optimizer, step_size=10, gamma=0.1) # learning rate scheduler
 
         # transform to Tensor
         X_train = torch.from_numpy(X_train).float()
@@ -78,7 +78,7 @@ class LSTM_model(torch.nn.Module):
 # To be possible to use GridSearchCV
 class LSTMModelWrapper(BaseEstimator, RegressorMixin):
     def __init__(self, input_size=1, hidden_layer_size=50, num_layers=1,
-                  output_size=1, learning_rate=0.001, epochs=10, batch_size=32, verbose=False):
+                  output_size=1, learning_rate=0.001, epochs=10, batch_size=32, weight_decay=0.0, verbose=False):
         
         # LSTM model sizes
         self.input_size = input_size
@@ -90,6 +90,7 @@ class LSTMModelWrapper(BaseEstimator, RegressorMixin):
         self.epochs = epochs
         self.batch_size = batch_size
         self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
         self.verbose = verbose
 
         # LSTM model
@@ -104,7 +105,7 @@ class LSTMModelWrapper(BaseEstimator, RegressorMixin):
     def fit(self, X, y):
         #self.model.input_size = X.shape[1]
         self.model.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, 
-                       learning_rate=self.learning_rate, verbose=self.verbose)
+                       learning_rate=self.learning_rate, weight_decay=self.weight_decay, verbose=self.verbose)
         return self
 
 
