@@ -1,7 +1,7 @@
 import pandas as pd
 
 class LoadData:
-    def __init__(self, path='content/potencias_geral.xlsx'):
+    def __init__(self, path='content/potencias_geral.xlsx', verbose=1):
         data = pd.read_excel(path)
         old_data = pd.read_excel('content/cleaned_data_train.xlsx')
 
@@ -52,7 +52,8 @@ class LoadData:
 
         # we can concatenate the old data with the new one
         # unfortunnaly we will losing some data but we have more features
-        print('Data lost: ', data.shape[0] - old_data.shape[0])
+        if verbose:
+            print('\nData lost: ', data.shape[0] - old_data.shape[0], ' samples')
         data['datetime'] = data['datetime'].dt.date
         old_data['datetime'] = old_data['datetime'].dt.date
         data = pd.merge(data, old_data, on='datetime')
@@ -61,6 +62,9 @@ class LoadData:
 
         ## we'll create binary classes for the consumption using 8.3 mWh as threshold
         data['crossed_threshold'] = data['consumo_max_diario'].apply(lambda x: 1 if x >= 8.3 else 0)
+        if verbose:
+            print('\n\t\t\t===Number of samples for each class====')
+            print(data['crossed_threshold'].value_counts())
 
         # Create a different dataframe with only the last month data (last 30 days)
         last_30_days = data['datetime'].max() - pd.Timedelta(days=30)
