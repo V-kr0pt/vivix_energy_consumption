@@ -1,7 +1,7 @@
 import pickle
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, confusion_matrix, roc_curve, auc, precision_recall_curve
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -196,3 +196,43 @@ class Model_utils:
         plot_path = f'results/graphs/{model_name}_error_by_epoch.png'
         fig.savefig(plot_path)
         return plot_path
+    
+
+    def plot_confusion_matrix(self, y_test, y_pred, model_name):
+        sns.set_theme(style="darkgrid")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        cm = confusion_matrix(y_test, y_pred)
+        sns.heatmap(cm, annot=True, fmt='d', ax=ax)
+        ax.set_title('Confusion Matrix')
+        plot_path = f'results/graphs/{model_name}_confusion_matrix.png'
+        fig.savefig(plot_path)
+        return plot_path
+    
+    def plot_roc(self, y_test, y_pred, model_name):
+        fpr, tpr, _ = roc_curve(y_test, y_pred)
+        roc_auc = auc(fpr, tpr)
+        line_x = [0, 1] # diagonal line
+        sns.set_theme(style="darkgrid")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.lineplot(x=fpr, y=tpr, ax=ax)
+        sns.lineplot(x=line_x, y=line_x, ax=ax)  # plot the diagonal line
+        ax.set_title('ROC Curve')
+        ax.set_ylabel('True Positive Rate')
+        ax.set_xlabel('False Positive Rate')
+        plot_path = f'results/graphs/{model_name}_roc_curve.png'
+        fig.savefig(plot_path)
+        return plot_path, roc_auc
+    
+    def plot_precision_recall(self, y_test, y_pred, model_name):
+        precision, recall, _ = precision_recall_curve(y_test, y_pred)
+        pr_auc = auc(recall, precision)
+
+        sns.set_theme(style="darkgrid")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.lineplot(x=recall, y=precision, ax=ax)
+        ax.set_title('Precision-Recall Curve')
+        ax.set_ylabel('Precision')
+        ax.set_xlabel('Recall')
+        plot_path = f'results/graphs/{model_name}_precision_recall_curve.png'
+        fig.savefig(plot_path)
+        return plot_path, pr_auc
