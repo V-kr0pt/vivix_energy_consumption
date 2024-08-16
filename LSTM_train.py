@@ -11,7 +11,7 @@ from utils.model_utils import Model_utils
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
 
-comments = 'minmax=True, 7 lag target, grid_search'
+comments = 'minmax=True, 7 lag target, grid_search, L2 regularization'
 
 
 # Load data
@@ -45,11 +45,12 @@ y_scaler = MinMaxScaler()
 y_train = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()  
 
 param_grid = {    
-    'hidden_layer_size': [1000, 1500, 2000, 2500, 3000, 5000],
-    'num_layers': [30, 50, 60, 80, 100],
-    'learning_rate': [0.001, 0.01, 0.1],
-    'epochs': [20, 30, 40, 50, 60],
-    'batch_size': [8, 16, 32, 64]
+    'hidden_layer_size': [128, 256, 512, 1024],
+    'num_layers': [4, 5, 6, 8],
+    'learning_rate': [0.001, 0.005, 0.01],
+    'weight_decay': [0.0001, 0.001, 0.01, 0.1],
+    'epochs': [20, 40, 60],
+    'batch_size': [16, 32, 64]
 }
 
 
