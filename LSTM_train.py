@@ -46,9 +46,9 @@ y_train = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
 
 param_grid = {    
     'hidden_layer_size': [128, 256, 512, 1024],
-    'num_layers': [4, 5, 6, 8],
+    'num_layers': [6, 8, 10, 12, 14],
     'learning_rate': [0.001, 0.005, 0.01],
-    'weight_decay': [0.0001, 0.001, 0.01, 0.1],
+    'weight_decay': [0.0001, 0.001, 0.01],
     'epochs': [20, 40, 60],
     'batch_size': [16, 32, 64]
 }
