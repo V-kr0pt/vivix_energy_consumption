@@ -1,3 +1,4 @@
+import numpy as np
 import pickle
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
@@ -209,8 +210,10 @@ class Model_utils:
         return plot_path
     
     def plot_roc(self, y_test, y_pred, model_name):
-        fpr, tpr, _ = roc_curve(y_test, y_pred)
+        fpr, tpr, threshold = roc_curve(y_test, y_pred)
         roc_auc = auc(fpr, tpr)
+        best_threshold = threshold[np.argmax(tpr - fpr)]
+
         line_x = [0, 1] # diagonal line
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -221,11 +224,14 @@ class Model_utils:
         ax.set_xlabel('False Positive Rate')
         plot_path = f'results/graphs/{model_name}_roc_curve.png'
         fig.savefig(plot_path)
-        return plot_path, roc_auc
+        return plot_path, roc_auc, best_threshold
     
     def plot_precision_recall(self, y_test, y_pred, model_name):
-        precision, recall, _ = precision_recall_curve(y_test, y_pred)
+        precision, recall, threshold = precision_recall_curve(y_test, y_pred)
         pr_auc = auc(recall, precision)
+
+        f1_score = 2 * (precision * recall) / (precision + recall)
+        best_threshold = threshold[np.argmax(f1_score)]
 
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -235,4 +241,4 @@ class Model_utils:
         ax.set_xlabel('Recall')
         plot_path = f'results/graphs/{model_name}_precision_recall_curve.png'
         fig.savefig(plot_path)
-        return plot_path, pr_auc
+        return plot_path, pr_auc, best_threshold
