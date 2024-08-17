@@ -1,7 +1,7 @@
 import pandas as pd
 
 class LoadData:
-    def __init__(self, path='content/potencias_geral.xlsx', verbose=1):
+    def __init__(self, path='content/potencias_geral.xlsx', test_months=1, verbose=1):
         data = pd.read_excel(path)
         old_data = pd.read_excel('content/cleaned_data_train.xlsx')
 
@@ -67,9 +67,13 @@ class LoadData:
             print(data['crossed_threshold'].value_counts())
 
         # Create a different dataframe with only the last month data (last 30 days)
-        last_30_days = data['datetime'].max() - pd.Timedelta(days=30)
+        delta_days = test_months*30
+        last_30_days = data['datetime'].max() - pd.Timedelta(days=delta_days)
         self.last_month_data = data.loc[data['datetime'] >= last_30_days].copy()
         self.data = data.loc[data['datetime'] < last_30_days].copy()
+        if verbose:
+            print('\n\t\t---- Ratio test/train ----')
+            print(self.last_month_data.shape[0] / (data.shape[0]+self.last_month_data.shape[0]))
 
         # Finally we can drop the datetime column
         self.data.drop(columns=['datetime'], inplace=True)
