@@ -212,13 +212,21 @@ class Model_utils:
     def plot_roc(self, y_test, y_pred, model_name):
         fpr, tpr, threshold = roc_curve(y_test, y_pred)
         roc_auc = auc(fpr, tpr)
-        best_threshold = threshold[np.argmax(tpr - fpr)]
+        
+        # best threshold
+        gmeans = np.sqrt(tpr * (1 - fpr))
+        best_idx = np.argmax(gmeans)
+        best_threshold = threshold[best_idx]
 
         line_x = [0, 1] # diagonal line
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.lineplot(x=fpr, y=tpr, ax=ax)
         sns.lineplot(x=line_x, y=line_x, ax=ax)  # plot the diagonal line
+
+        #ax.plot(fpr[best_idx], tpr[best_idx], 'ro', label=f'{best_threshold:.2f}')  # plot the best threshold
+        #ax.legend(loc='best')
+        
         ax.set_title('ROC Curve')
         ax.set_ylabel('True Positive Rate')
         ax.set_xlabel('False Positive Rate')
@@ -231,11 +239,15 @@ class Model_utils:
         pr_auc = auc(recall, precision)
 
         f1_score = 2 * (precision * recall) / (precision + recall)
-        best_threshold = threshold[np.argmax(f1_score)]
+        best_idx = np.argmax(f1_score)
+        best_threshold = threshold[best_idx]
 
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.lineplot(x=recall, y=precision, ax=ax)
+        #ax.plot(recall[best_idx], precision[best_idx], 'ro', label=f'{best_threshold:.2f}')  # plot the best threshold
+        #ax.legend(loc='best')
+
         ax.set_title('Precision-Recall Curve')
         ax.set_ylabel('Precision')
         ax.set_xlabel('Recall')

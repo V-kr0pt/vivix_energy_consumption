@@ -1,17 +1,18 @@
 import xgboost as xgb
 import mlflow
 from mlflow.models import infer_signature
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.metrics import precision_score, recall_score, f1_score 
 from utils.model_utils import Model_utils 
 from utils.load_data import LoadData
 from utils.preprocess import Preprocess
+from imblearn.over_sampling import SMOTE
 
 # comments to be saved in the history
-comments = '7 lag media_diario + 2 lag all features; shuffle train data = True with seed'
+comments = 'add SMOTE strategy=0.75 with scale_pos_weight + 5 months test; StratifiedKFold shuffle False; average_precision_score; lag only consumo_max_diario; -0.1 threshold'
 model_name = 'xgboost'
 
-load_data = LoadData()
+load_data = LoadData(test_months=5, verbose=True)
 
 # load train/validation data
 data = load_data.data
@@ -20,17 +21,17 @@ preprocess = Preprocess(data, load_data.numerical_features, load_data.categorica
                          load_data.boolean_features, load_data.target)
 
 # lagging columns
-lag_columns_list = ['medio_diario']*7
+lag_columns_list = ['consumo_max_diario']*7
 lag_values = [1, 2, 3, 4, 5, 6, 7]
-lag_columns_list += load_data.features
-lag_values += [1, 2] * len(load_data.features)
+#lag_columns_list += load_data.features
+#lag_values += [1, 2] * len(load_data.features)
 
 # create the lagged columns in data
 data = preprocess.create_lag_columns(lag_columns_list, lag_values)
 data = data.iloc[7:]
 
 # shuffling data
-data = data.sample(frac=1, random_state=42).reset_index(drop=True)
+#data = data.sample(frac=1, random_state=42).reset_index(drop=True)
 
 features = preprocess.features
 target = preprocess.target
@@ -44,61 +45,41 @@ preprocessor = preprocess.create_preprocessor(scale_std=False, scale_minmax=Fals
 # Preprocess the data
 X_train = preprocessor.fit_transform(X_train)
 
+# Create SMOTE for imbalanced data
+smote = SMOTE(sampling_strategy=0.75, random_state=42)
+X_train, y_train = smote.fit_resample(X_train, y_train)
+new_data_scale = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
+print(f'new_data_scale: {new_data_scale}')
+
 # Train the model
 # Define the parameter grid for grid search
-#param_grid = {
-#    'n_estimators': [700, 800, 900],
-#    'max_depth': [1, 2, 3],
-#    'learning_rate': [0.01],
-#    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
-#    'subsample': [0.4, 0.5, 0.6],
-#    'reg_alpha': [0.1, 0.2, 0.3, 0.4, 0.5], # L1 regularization
-#    'reg_lambda': [0, 0.01], # L2 regularization
-#    'random_state': [42]
-#}
-
 param_grid = {
-    'n_estimators': [800],
-    'max_depth': [2],
-    'learning_rate': [0.01],
-    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
-    'subsample': [0.5],
-    'reg_alpha': [0.5], # L1 regularization
-    'reg_lambda': [0.01], # L2 regularization
-    'random_state': [42]
+    'n_estimators': [300, 500, 1000, 1500],  # Número de árvores, pode aumentar dependendo do problema
+    'max_depth': [6, 8, 10],  # Profundidade máxima da árvore, maior valor pode capturar mais detalhes, mas pode aumentar o overfitting
+    'learning_rate': [0.001, 0.01],  # Taxa de aprendizado, balanceando entre a velocidade e o risco de overfitting
+    'reg_alpha': [0.01, 0.1, 0.5],  # Regularização L1
+    'reg_lambda': [0.01, 0.1, 0.5],  # Regularização L2
+    'scale_pos_weight': [6, 7, 8],  # Ajuste para classes desbalanceadas
+    'random_state': [42]  # Para reprodutibilidade
 }
 
 
-# Define the parameters
-#params = {
-#    'objective':'reg:squarederror',
-#    'enable_categorical':'True',
-#    'n_estimators': 1300,
-#    'max_depth': 3,
-#    'learning_rate': 0.01, 
-#    'gamma': 0,
-#    'subsample': 0.3,
-#    'reg_alpha': 0.5, 
-#    'reg_lambda': 0,
-#    'random_state': 42,
-#    'device':'cuda'                    
-#}
-
-# Create the XGBRegressor model
-model = xgb.XGBRegressor() #xgb.XGBRegressor(**params)
+# Create the XGboost classification model
+model = xgb.XGBClassifier(objective='binary:logistic')
 
 # Train the model
-# TimeSeriesSplit Config
-tscv = TimeSeriesSplit(n_splits=3)
-
-grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
+scv = StratifiedKFold(n_splits=10, shuffle=False)#, random_state=42)
+grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=scv, scoring='average_precision', n_jobs=-1)
 grid_search.fit(X_train, y_train)
-#model.fit(X_train, y_train)
 
 # Set the best parameters 
 params = grid_search.best_params_
 model = model.set_params(**params)
 model.fit(X_train, y_train)
+
+model_utils = Model_utils()
+## Show train results
+y_pred_train_prob = model.predict_proba(X_train)[:,1]
 
 ### Evaluate the model
 test_data = load_data.last_month_data
@@ -114,37 +95,53 @@ y_test = test_data[target]
 X_test = preprocessor.transform(X_test) 
 
 # Test the model
-y_pred = model.predict(X_test)
+y_pred_prob = model.predict_proba(X_test)[:,1]
+
+# plotting ROC and Precision-Recall curves
+plot_path_roc, auc_roc, _ = model_utils.plot_roc(y_test, y_pred_prob, model_name)
+plot_path_prec_rec, auc_pr, threshold = model_utils.plot_precision_recall(y_test, y_pred_prob, model_name)
+
+# Convert the probabilities to binary classes
+threshold -= 0.1 # forcing the threshold to be 10% lower than the optimal threshold to increase recall
+y_pred_binary = (y_pred_prob > threshold).astype(int)
+y_pred_train_binary = (y_pred_train_prob > threshold).astype(int)
 
 # Evaluate the model
-mae = mean_absolute_error(y_test, y_pred)
-mse = mean_squared_error(y_test, y_pred)
-rmse = mse ** 0.5
-r2 = r2_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred_binary)
+recall = recall_score(y_test, y_pred_binary)
+f1 =  f1_score(y_test, y_pred_binary)
 
-model_utils = Model_utils()
-plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name)
+# Confusion matrix
+plot_path_cfm = model_utils.plot_confusion_matrix(y_test, y_pred_binary, model_name)
+plot_path_train_cfm = model_utils.plot_confusion_matrix(y_train, y_pred_train_binary, model_name + '_train')
 
 #### MLflow
 
 # Set our tracking server uri for logging
-mlflow.set_tracking_uri(uri="http://127.0.0.1:8080")
+dags_hub_url = 'https://dagshub.com/V-kr0pt/vivix_energy_consumption.mlflow'
+mlflow.set_tracking_uri(uri=dags_hub_url)
 
 # Create a new MLflow Experiment
-mlflow.set_experiment("MLflow Vivix")
+experiment = 'Demanda Classification'
+mlflow.set_experiment(experiment)
 
 with mlflow.start_run():
     # Log the hyperparameters
     mlflow.log_params(params)
 
     # Save the prediction plot
-    mlflow.log_artifact(plot_path)
+    mlflow.log_artifact(plot_path_cfm)
+    mlflow.log_artifact(plot_path_roc)
+    mlflow.log_artifact(plot_path_prec_rec)
+    mlflow.log_artifact(plot_path_train_cfm)
 
     # Log the loss metricFailed to fetch
-    mlflow.log_metric("MAE", mae)
-    mlflow.log_metric("MSE", mse)
-    mlflow.log_metric("RMSE", rmse)
-    mlflow.log_metric("R2", r2)
+    mlflow.log_metric("precision", precision)
+    mlflow.log_metric("recall", recall)
+    mlflow.log_metric("f1", f1)
+    mlflow.log_metric("auc_roc", auc_roc)
+    mlflow.log_metric("auc_pr", auc_pr)
+    mlflow.log_metric("threshold", threshold)
 
     # Set a tag that we can use to remind ourselves what this run was for
     mlflow.set_tag("Training Info", comments)
@@ -157,6 +154,5 @@ with mlflow.start_run():
         sk_model=model,
         artifact_path="vivix_model",
         signature=signature,
-        input_example=X_train[0],
         registered_model_name=model_name,
     )
