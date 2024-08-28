@@ -29,14 +29,14 @@ class LoadData:
         # create datetime column to group by and sum the consumption
         data['datetime'] = data.apply(self.adjust_time, axis=1)
 
-        # Group by datetime and ponto_de_medicao
+        # Sum the energy consumption from differents ponto_de_medicao grouping by datetime 
         data = data.groupby(['datetime'])['consumo_mwh'].sum().reset_index()
+
+        # Assure that the data is sorted by date
+        data = data.sort_values(by='datetime')
 
         # Standardize string columns to lowercase
         old_data = old_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
-
-        # Garantee that the data is sorted by date
-        data = data.sort_values(by='datetime')
 
         # now divide the data column into year, month, week_day and hour
         data['year'] = data['datetime'].dt.year
@@ -47,17 +47,24 @@ class LoadData:
 
         # Now we only need the mean consumation value from the day
         data['consumo_medio_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('mean')
-        data = data[data['consumo_mwh'] == data['consumo_medio_diario']]
         data.drop(columns=['consumo_mwh'], inplace=True)
 
+        # Drop duplicate rows to keep only one row per day
+        data = data.drop_duplicates(subset=['year', 'month', 'day'])
+
+        # Reset the index
+        data.reset_index(drop=True, inplace=True)
+
         # we can concatenate the old data with the new one
-        # unfortunnaly we will losing some data but we have more features
+        # Since we don't have the november data and the old_data don't have the 1st of april 2024
+        # we'll lose 31 days of data
+        # But using that we have more features
         print('Data lost: ', abs(data.shape[0] - old_data.shape[0]))
         data['datetime'] = data['datetime'].dt.date
         old_data['datetime'] = old_data['datetime'].dt.date
 
         merged_data = pd.merge(data, old_data, on='datetime', how='outer', indicator=True)
-        
+        # doing a log data to confirm that the merge was successful
         if log_merge:
             not_merged_data = merged_data[merged_data['_merge'] != 'both']
             print('Data not merged: ', not_merged_data.shape[0])
