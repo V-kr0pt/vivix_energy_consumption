@@ -46,7 +46,7 @@ class LoadData:
         data['hour'] = data['datetime'].dt.hour
 
         # Now we only need the mean consumation value from the day
-        data['consumo_medio_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('max')
+        data['consumo_medio_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('mean')
         data = data[data['consumo_mwh'] == data['consumo_medio_diario']]
         data.drop(columns=['consumo_mwh'], inplace=True)
 
