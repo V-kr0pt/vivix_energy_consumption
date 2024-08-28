@@ -1,9 +1,9 @@
 import pandas as pd
 
 class LoadData:
-    def __init__(self, path='content/potencias_geral.xlsx'):
+    def __init__(self, path='content/potencias_geral.xlsx', log_merge=False):
         data = pd.read_excel(path)
-        old_data = pd.read_excel('content/cleaned_data_train.xlsx')
+        old_data = pd.read_excel('content/data_trainE_L_MARÇO_COMPLETO.xlsx')
 
         # Rename columns
         # all in lower case
@@ -45,17 +45,27 @@ class LoadData:
         data['week_day'] = data['datetime'].dt.dayofweek
         data['hour'] = data['datetime'].dt.hour
 
-        # Now we only need the max consumation value from the day
-        data['consumo_max_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('max')
-        data = data[data['consumo_mwh'] == data['consumo_max_diario']]
+        # Now we only need the mean consumation value from the day
+        data['consumo_medio_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('max')
+        data = data[data['consumo_mwh'] == data['consumo_medio_diario']]
         data.drop(columns=['consumo_mwh'], inplace=True)
 
         # we can concatenate the old data with the new one
         # unfortunnaly we will losing some data but we have more features
-        print('Data lost: ', data.shape[0] - old_data.shape[0])
+        print('Data lost: ', abs(data.shape[0] - old_data.shape[0]))
         data['datetime'] = data['datetime'].dt.date
         old_data['datetime'] = old_data['datetime'].dt.date
-        data = pd.merge(data, old_data, on='datetime')
+
+        merged_data = pd.merge(data, old_data, on='datetime', how='outer', indicator=True)
+        
+        if log_merge:
+            not_merged_data = merged_data[merged_data['_merge'] != 'both']
+            print('Data not merged: ', not_merged_data.shape[0])
+            not_merged_data.to_excel('content/content_log/not_merged_data.xlsx', index=False)
+            data.to_excel('content/content_log/data_bfr_merge.xlsx', index=False)
+            old_data.to_excel('content/content_log/old_data_bfr_merge.xlsx', index=False)
+
+        data = merged_data[merged_data['_merge'] == 'both']
         # the medio_diario is not useful anymore
         data.drop(columns=['medio_diario'], inplace=True)
 
@@ -75,7 +85,7 @@ class LoadData:
         
         # create a list with all features and the target
         self.features = self.numerical_features + self.categorical_features + self.boolean_features
-        self.target = 'consumo_max_diario'
+        self.target = 'consumo_medio_diario'
 
 
     def adjust_time(self, row):
@@ -86,12 +96,16 @@ class LoadData:
 
 
 if __name__ == '__main__':
-    load_data = LoadData()
+    load_data = LoadData(log_merge=True)
     print('\n\t\t---- Data ----')
     print(load_data.data.head())
+    print('...')
+    print(load_data.data.tail())
     print('shape: ', load_data.data.shape)
     print('\n\t\t---- Last month data ----\t')
     print(load_data.last_month_data.head())
+    print('...')
+    print(load_data.last_month_data.tail())
     print('shape: ', load_data.last_month_data.shape)
     print('\n\t\t---- Features ----')
     print(load_data.features)
