@@ -33,7 +33,7 @@ class LoadData:
         data = data.groupby(['datetime'])['consumo_mwh'].sum().reset_index()
 
         # Standardize string columns to lowercase
-        data = data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+        old_data = old_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
 
         # Garantee that the data is sorted by date
         data = data.sort_values(by='datetime')
