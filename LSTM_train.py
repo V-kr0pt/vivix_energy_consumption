@@ -102,7 +102,7 @@ mlflow.set_tracking_uri(uri=dags_hub_url)
 
 
 # Create a new MLflow Experiment
-experiment = 'Demanda Regression'
+experiment = 'Energy Regression'
 mlflow.set_experiment(experiment)
 with mlflow.start_run():
 
