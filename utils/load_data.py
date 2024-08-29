@@ -1,7 +1,7 @@
 import pandas as pd
 
 class LoadData:
-    def __init__(self, path='content/potencias_geral.xlsx', log_merge=False):
+    def __init__(self, path='content/potencias_geral.xlsx', test_days=90,log_merge=False):
         data = pd.read_excel(path)
         old_data = pd.read_excel('content/data_trainE_L_MARÇO_COMPLETO.xlsx')
 
@@ -76,10 +76,10 @@ class LoadData:
         # the medio_diario is not useful anymore
         data.drop(columns=['medio_diario'], inplace=True)
 
-        # Create a different dataframe with only the last month data (last 30 days)
-        last_30_days = data['datetime'].max() - pd.Timedelta(days=30)
-        self.last_month_data = data.loc[data['datetime'] >= last_30_days].copy()
-        self.data = data.loc[data['datetime'] < last_30_days].copy()
+        # Create a different dataframe with only the last 2 months of data 
+        last_days = data['datetime'].max() - pd.Timedelta(days=test_days)
+        self.last_month_data = data.loc[data['datetime'] >= last_days].copy()
+        self.data = data.loc[data['datetime'] < last_days].copy()
 
         # Finally we can drop the datetime column
         self.data.drop(columns=['datetime'], inplace=True)
@@ -120,3 +120,5 @@ if __name__ == '__main__':
     print('\n\t\t---- Target ----')
     print(load_data.target)
     print('\n')
+    print('Train/Test split')
+    print(f'split %: {load_data.last_month_data.shape[0]/load_data.data.shape[0]*100}%')
