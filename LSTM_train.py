@@ -1,6 +1,7 @@
 import mlflow
 from mlflow.models import infer_signature
 
+import numpy as np
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.preprocessing import MinMaxScaler#, StandardScaler
 
@@ -10,13 +11,18 @@ from utils.model_utils import Model_utils
 
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
+comments = 'TESTE==SEM prod_L, prod_E!===; minmax=True, 7 window, grid_search'
 
-comments = 'minmax=True, 7 lag target, grid_search, L2 regularization'
-
-
-# Load data
+# Instantiate the LoadData and Model_utils class
 load_data = LoadData()
-data = load_data.data        
+model_utils = Model_utils()
+
+# Loading data
+data = load_data.data
+
+# dropping prod_l and prod_e columns
+data.drop(columns=['prod_l', 'prod_e'], inplace=True)
+load_data.boolean_features =[]
 # Create the preprocess object and the preprocessor
 preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
                         load_data.boolean_features, load_data.target)
@@ -24,12 +30,12 @@ x_preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=
 
 
 # lagging columns
-lag_columns_list = [load_data.target]*7  # load_data.target is the 'consumo_max_diario' column 
-lag_values = [1, 2, 3, 4, 5, 6, 7]
-
-# create the lagged columns in data
-data = preprocess.create_lag_columns(lag_columns_list, lag_values)
-data = data.iloc[7:]
+#lag_columns_list = [load_data.target]*7  # load_data.target is the 'consumo_max_diario' column 
+#lag_values = [1, 2, 3, 4, 5, 6, 7]
+#
+## create the lagged columns in data
+#data = preprocess.create_lag_columns(lag_columns_list, lag_values)
+#data = data.iloc[7:]
 
 # Features and target split 
 # since now we have lagged columns we need to use the preprocess object to get the features
@@ -44,20 +50,26 @@ X_train = x_preprocessor.fit_transform(X_train)
 y_scaler = MinMaxScaler()
 y_train = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()  
 
+# Create sequences
+window_size = 7
+X_train, y_train = model_utils.create_sequences(X_train, y_train, window_size)
+
+
+# === Grid search ===
 param_grid = {    
-    'hidden_layer_size': [128, 256, 512, 1024],
-    'num_layers': [6, 8, 10, 12, 14],
-    'learning_rate': [0.001, 0.005, 0.01],
-    'weight_decay': [0.0001, 0.001, 0.01],
-    'epochs': [20, 40, 60],
-    'batch_size': [16, 32, 64]
+    'hidden_layer_size': [2500, 3000, 3500],
+    'num_layers': [10, 15, 20],
+    'learning_rate': [0.01, 0.1],
+    'weight_decay': [0.0001, 0.001],
+    'scheduler_step_size': [10, 15, 20],
+    'scheduler_gamma': [0.1, 0.2],
+    'epochs': [40, 60],
+    'batch_size': [16]
 }
 
-
-lstm_model = LSTMModel(input_size=X_train.shape[1], output_size=1)
+lstm_model = LSTMModel(input_size=X_train.shape[-1], output_size=1)
 model_name = lstm_model.model.model_name
 
-# grid search
 tscv = TimeSeriesSplit(n_splits=10)
 grid_search = GridSearchCV(estimator=lstm_model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error',
                             n_jobs=-1, verbose=1)
@@ -72,8 +84,8 @@ lstm_model.fit(X_train, y_train)
 test_data = load_data.last_month_data
 
 # create the lagged columns in data
-test_data = preprocess.create_lag_columns(lag_columns_list, lag_values, data=test_data)
-test_data = test_data.iloc[7:]
+#test_data = preprocess.create_lag_columns(lag_columns_list, lag_values, data=test_data)
+#test_data = test_data.iloc[7:]
 
 X_test = test_data[features]
 y_test = test_data[target].to_numpy()
@@ -81,14 +93,19 @@ y_test = test_data[target].to_numpy()
 # preprocess the test data
 X_test = x_preprocessor.transform(X_test)
 
+# Create sequences for test data
+X_test, y_test = model_utils.create_sequences(X_test, y_test, window_size)
+
 # predict
 y_pred = lstm_model.predict(X_test)
 y_pred = y_scaler.inverse_transform(y_pred.reshape(-1, 1)).flatten()
 
+# Removing the sequences
+X_test = X_test[:, -1]
+
 # Calculate the metrics
-model_utils = Model_utils()
 mae, mse, rmse, r2 = model_utils.calculate_metrics(y_test, y_pred)
-pred_plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name)
+pred_plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name, graph_name='Média de consumo de energia diária do Forno')
 print(f'MAE: {mae}, MSE: {mse}, RMSE: {rmse}, R2: {r2}')
 
 # Plotting the Error by epoch
@@ -102,7 +119,7 @@ mlflow.set_tracking_uri(uri=dags_hub_url)
 
 
 # Create a new MLflow Experiment
-experiment = 'Energy Regression'
+experiment = 'energy_regression'
 mlflow.set_experiment(experiment)
 with mlflow.start_run():
 

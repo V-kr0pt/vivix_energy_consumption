@@ -28,7 +28,7 @@ class LSTM_model(torch.nn.Module):
 
     def forward_pass(self, x):
         lstm_out, _ = self.model(x)
-        out = self.fc(lstm_out) 
+        out = self.fc(lstm_out[:, -1, :]) # only the last output of the sequence 
         return out.view(-1) # to be an array and not a 1 column matrix
 
 
