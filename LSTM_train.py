@@ -11,7 +11,7 @@ from utils.model_utils import Model_utils
 
 from LSTM_model import LSTMModelWrapper as LSTMModel
 
-comments = 'TESTE==SEM prod_L, prod_E!===; minmax=True, 7 window, grid_search'
+comments = '==SEM prod_L, prod_E!===; minmax=True, 7 lag target, best params'
 
 # Instantiate the LoadData and Model_utils class
 load_data = LoadData()
@@ -29,13 +29,13 @@ preprocess = Preprocess(data, load_data.numerical_features, load_data.categorica
 x_preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=False, scale_minmax=True)
 
 
-# lagging columns
-#lag_columns_list = [load_data.target]*7  # load_data.target is the 'consumo_max_diario' column 
-#lag_values = [1, 2, 3, 4, 5, 6, 7]
-#
+## lagging columns
+lag_columns_list = [load_data.target]*7  
+lag_values = [1, 2, 3, 4, 5, 6, 7]
+
 ## create the lagged columns in data
-#data = preprocess.create_lag_columns(lag_columns_list, lag_values)
-#data = data.iloc[7:]
+data = preprocess.create_lag_columns(lag_columns_list, lag_values)
+data = data.iloc[7:]
 
 # Features and target split 
 # since now we have lagged columns we need to use the preprocess object to get the features
@@ -50,22 +50,30 @@ X_train = x_preprocessor.fit_transform(X_train)
 y_scaler = MinMaxScaler()
 y_train = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()  
 
-# Create sequences
-window_size = 7
-X_train, y_train = model_utils.create_sequences(X_train, y_train, window_size)
-
 
 # === Grid search ===
-param_grid = {    
-    'hidden_layer_size': [2500, 3000, 3500],
-    'num_layers': [10, 15, 20],
-    'learning_rate': [0.01, 0.1],
-    'weight_decay': [0.0001, 0.001],
-    'scheduler_step_size': [10, 15, 20],
-    'scheduler_gamma': [0.1, 0.2],
-    'epochs': [40, 60],
+#param_grid = {    
+#    'hidden_layer_size': [2500, 3000, 3500],
+#    'num_layers': [10, 20, 30],
+#    'learning_rate': [0.01, 0.1],
+#    'weight_decay': [0.0001, 0.001],
+#    'scheduler_step_size': [10, 15, 20],
+#    'scheduler_gamma': [0.1, 0.2],
+#    'epochs': [40, 60],
+#    'batch_size': [16]
+#}
+
+best_params = {
+    'hidden_layer_size': [2500],
+    'num_layers': [10],
+    'learning_rate': [0.1],
+    'weight_decay': [0.0001],
+    'scheduler_step_size': [10],
+    'scheduler_gamma': [0.2],
+    'epochs': [40],
     'batch_size': [16]
 }
+param_grid = best_params
 
 lstm_model = LSTMModel(input_size=X_train.shape[-1], output_size=1)
 model_name = lstm_model.model.model_name
@@ -93,19 +101,13 @@ y_test = test_data[target].to_numpy()
 # preprocess the test data
 X_test = x_preprocessor.transform(X_test)
 
-# Create sequences for test data
-X_test, y_test = model_utils.create_sequences(X_test, y_test, window_size)
-
 # predict
 y_pred = lstm_model.predict(X_test)
 y_pred = y_scaler.inverse_transform(y_pred.reshape(-1, 1)).flatten()
 
-# Removing the sequences
-X_test = X_test[:, -1]
-
 # Calculate the metrics
 mae, mse, rmse, r2 = model_utils.calculate_metrics(y_test, y_pred)
-pred_plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name, graph_name='Média de consumo de energia diária do Forno')
+pred_plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name, graph_title='Média de consumo de energia diária do Forno')
 print(f'MAE: {mae}, MSE: {mse}, RMSE: {rmse}, R2: {r2}')
 
 # Plotting the Error by epoch
