@@ -72,9 +72,13 @@ class LoadData:
             data.to_excel('content/content_log/data_bfr_merge.xlsx', index=False)
             old_data.to_excel('content/content_log/old_data_bfr_merge.xlsx', index=False)
 
-        data = merged_data[merged_data['_merge'] == 'both']
+        data = merged_data[merged_data['_merge'] == 'both'].copy()
         # the medio_diario is not useful anymore
         data.drop(columns=['medio_diario'], inplace=True)
+        # if we want to remove the not useful dataframes we can do it here 
+        # del old_data
+        # del merged_data
+        # gc.collect() # you have to import gc (garbage collector)
 
         # Create a different dataframe with only the last 2 months of data 
         last_days = data['datetime'].max() - pd.Timedelta(days=test_days)
