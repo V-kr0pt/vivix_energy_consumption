@@ -5,6 +5,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 class Model_utils:
     def __init__(self):
@@ -126,9 +127,12 @@ class Model_utils:
 
 
     def plot_predictions(self, y_pred, y_true, mae, mse, rmse, r2, model_name,graph_name='prediction',
-                          graph_title='Consumo máximo de energia diária do Forno',
+                          graph_title=None,
                           graph_ylabel='Consumo de energia (MWh/dia)',
                           save=True, save_path='results/graphs/', print_error=False):
+        
+        if graph_title is None:
+            graph_title = f'{model_name} - Prediction vs True'
         
         # Create the error bands
         upper_band = y_pred + rmse
@@ -177,7 +181,7 @@ class Model_utils:
         for i in range(len(X) - seq_length):
             X_seq.append(X[i:i+seq_length])
             y_seq.append(y[i+seq_length])
-        return X_seq, y_seq
+        return np.array(X_seq), np.array(y_seq)
 
     def calculate_metrics(self, y_test, y_pred):
         mae = mean_absolute_error(y_test, y_pred)
