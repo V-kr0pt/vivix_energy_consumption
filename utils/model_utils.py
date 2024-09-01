@@ -200,3 +200,12 @@ class Model_utils:
         plot_path = f'results/graphs/{model_name}_error_by_epoch.png'
         fig.savefig(plot_path)
         return plot_path
+    
+    def plot_feature_importance(self, model, features, model_name):
+        sns.set_theme(style="darkgrid")
+        fig, ax = plt.subplots(figsize=(20, 15))
+        sns.barplot(x=model.feature_importances_, y=features, ax=ax)
+        ax.set_title('Feature Importance')
+        plot_path = f'results/graphs/{model_name}_feature_importance.png'
+        fig.savefig(plot_path)
+        return plot_path
