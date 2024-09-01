@@ -39,7 +39,7 @@ class LoadData:
         old_data = old_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
 
         # now divide the data column into year, month, week_day and hour
-        # data['year'] = data['datetime'].dt.year (always 2023)
+        data['year'] = data['datetime'].dt.year
         data['month'] = data['datetime'].dt.month
         data['day'] = data['datetime'].dt.day
         data['week_day'] = data['datetime'].dt.dayofweek
@@ -75,6 +75,8 @@ class LoadData:
         data = merged_data[merged_data['_merge'] == 'both'].copy()
         # the medio_diario is not useful anymore
         data.drop(columns=['medio_diario'], inplace=True)
+        data.drop(columns=['year']) # since train data is only from 2023
+        
         # if we want to remove the not useful dataframes we can do it here 
         # del old_data
         # del merged_data
