@@ -1,8 +1,6 @@
-MonEnergia_Modelos.ipynb
-old_content
-notes
-model_test.ipynb
-.vscode
-docs
+content
 venv
+.vscode
 __pycache__
+*.sh
+results/
