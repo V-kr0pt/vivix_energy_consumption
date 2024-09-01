@@ -39,11 +39,11 @@ class LoadData:
         old_data = old_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
 
         # now divide the data column into year, month, week_day and hour
-        data['year'] = data['datetime'].dt.year
+        # data['year'] = data['datetime'].dt.year (always 2023)
         data['month'] = data['datetime'].dt.month
         data['day'] = data['datetime'].dt.day
         data['week_day'] = data['datetime'].dt.dayofweek
-        data['hour'] = data['datetime'].dt.hour
+        # data['hour'] = data['datetime'].dt.hour not relevant to the max or mean of the day
 
         # Now we only need the mean consumation value from the day
         data['consumo_medio_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('mean')
