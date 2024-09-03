@@ -93,6 +93,9 @@ class Preprocess:
     
     def save_preprocessor(self, path):
         joblib.dump(self.preprocessor, path)
+
+    def load_preprocessor(self, path):
+        self.preprocessor = joblib.load(path)
     
     # This function returns the real boost power based on the glass color 
     def boost_power(self, color, boost_extraction):
