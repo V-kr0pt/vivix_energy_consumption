@@ -3,6 +3,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
+import joblib
 
 class Preprocess:
     def __init__(self, data, numerical_features, categorical_features, boolean_features, target):
@@ -89,6 +90,9 @@ class Preprocess:
     def fit_transform(self, data):
         self.fit(data)
         return self.transform(data)
+    
+    def save_preprocessor(self, path):
+        joblib.dump(self.preprocessor, path)
     
     # This function returns the real boost power based on the glass color 
     def boost_power(self, color, boost_extraction):

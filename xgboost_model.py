@@ -43,6 +43,10 @@ y_train = data[target]
 # Preprocess the data
 X_train = preprocess.fit_transform(X_train)
 
+# saving the preprocessor
+preprocess_path = './results/preprocessors/' + model_name + '_preprocessor.pkl'
+preprocess.save_preprocessor(preprocess_path)
+
 # Train the model
 # Define the parameter grid for grid search
 # param_grid = {...}
@@ -122,6 +126,7 @@ with mlflow.start_run():
     # Save the prediction plot
     mlflow.log_artifact(pred_plot_path)
     mlflow.log_artifact(feature_importance_path)
+    mlflow.log_artifact(preprocess_path)
 
     # Set a tag that we can use to remind ourselves what this run was for
     mlflow.set_tag("Training Info", comments)
