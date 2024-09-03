@@ -66,6 +66,8 @@ class LoadData:
         merged_data = pd.merge(data, old_data, on='datetime', how='outer', indicator=True)
         # doing a log data to confirm that the merge was successful
         if log_merge:
+            merged_data[merged_data['_merge'] == 'both'].to_excel('content/content_log/merged_data.xlsx', index=False)
+            print('Data merged: ', merged_data[merged_data['_merge'] == 'both'].shape[0])
             not_merged_data = merged_data[merged_data['_merge'] != 'both']
             print('Data not merged: ', not_merged_data.shape[0])
             not_merged_data.to_excel('content/content_log/not_merged_data.xlsx', index=False)
