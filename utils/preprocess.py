@@ -83,7 +83,10 @@ class Preprocess:
     
     def transform(self, data):
         assert self.preprocessor is not None, 'You need to fit the preprocessor before transforming the data'
+        self.features = self.preprocessor.get_feature_names_out()
+        self.features = self.features.tolist()
         return self.preprocessor.transform(data) 
+
         #assert self.features == transformed_data.columns.tolist(), 'The columns in the data are different from the features used to fit the preprocessor'
                
 
