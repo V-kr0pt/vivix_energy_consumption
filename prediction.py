@@ -1,0 +1,137 @@
+import joblib
+import pandas as pd
+from utils.preprocess import Preprocess
+
+class Prediction:
+    def __init__(self, model_name, data_name):
+        self.model_name = model_name
+        self.data_name = data_name
+        
+    def load_model(self):
+        path = './results/models/' + self.model_name + '.pkl'
+        self.model = joblib.load(path)
+        return 
+
+    def load_data(self):
+        data_path = './results/input_data/' + self.data_name + '.xlsx'
+        self.data = pd.read_excel(data_path)
+
+    def preprocess_data(self):
+        # Perform data preprocessing here
+        self.data.rename(columns={
+            'data':'datetime',
+            'cor': 'cor',
+            'esp': 'espessura',
+            'extração': 'extracao_forno',
+            'caco': 'porcentagem_caco',
+            'ext forno boosting': 'extracao_boosting',
+            'potencia boosting': 'boosting',
+            'medio_diario': 'consumo_medio_diario',
+        }, inplace=True)  
+        
+        # we'll return the 'cor' to their orignal names, so we can use the same preprocessing as before
+        cor_dict = {0:'incolor', 1:'verde', 2:'cinza'}
+        self.data['cor'] = self.data['cor'].map(cor_dict)
+
+        # be sure that all strings are lower case (cor is already lowercase)
+        #self.data = self.data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+
+        # list of features
+        self.numerical_features = ['boosting', 'espessura', 'extracao_forno', 'porcentagem_caco']
+        self.categorical_features = ['month', 'week_day', 'day', 'cor']
+        self.boolean_features = []
+
+        self.features = self.numerical_features + self.categorical_features + self.boolean_features
+
+        # target
+        self.target = 'consumo_medio_diario'
+
+        # Create a Preprocess object
+        preprocess = Preprocess(self.data, self.numerical_features, self.categorical_features,
+                                 self.boolean_features, self.target)
+        
+        #preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=False, scale_minmax=False)
+        
+        # preprocess the data
+        # transform the boosting column
+        self.data['boosting'] = self.data.apply(
+            lambda row: preprocess.boost_power(row['cor'], row['extracao_boosting']), axis=1
+        )
+
+        # create date columns
+        self.data['datetime'] = pd.to_datetime(self.data['datetime'], dayfirst=True)
+        self.data['month'] = self.data['datetime'].dt.month
+        self.data['week_day'] = self.data['datetime'].dt.dayofweek
+        self.data['day'] = self.data['datetime'].dt.day
+
+        # create lag target column
+        lag_columns_list = [self.target]*7
+        lag_values = [1, 2, 3, 4, 5, 6, 7]
+        self.data = preprocess.create_lag_columns(lag_columns_list, lag_values)
+        self.data = self.data.iloc[7:]
+
+        # Tranform the columns to use OneHotEncoder
+        preprocessor_path = './results/preprocessors/' + self.model_name + '_preprocessor.pkl'
+        preprocess.load_preprocessor(preprocessor_path)
+        
+        # Remove target_data and datetime columns
+        self.target_data = self.data[self.target].values.reshape(-1,1)
+        self.datetime_data = self.data['datetime'].values.reshape(-1,1)
+        self.data.drop(columns=[self.target, 'datetime'], inplace=True)
+
+        # Transform the data and concatenate the target_data
+        self.data = preprocess.transform(self.data) 
+        #self.data = np.hstack([self.data, self.target_data])
+        
+        self.features = preprocess.features
+        self.target_column_index = len(self.features) # the target is the last column
+        
+        
+    def recurrent_prediction(self):
+        # Inicializar as previsões
+        predictions = []
+
+        for i, row in enumerate(self.data):
+            prediction = self.model.predict(row.reshape(1,-1))[0] # transform to 2D array and do the prediction
+
+            predictions.append({
+                'datetime': self.datetime_data[i,0],
+                'predicted_consumo': prediction
+            })
+            
+            # update all the lag columns
+            # the lag columns are the 5th column to 11th column (self.features[4] = lag1 and self.features[10] = lag7)
+            for j in range(0, 7):
+                upt_col = j+4 # the first lag column is the 5th column
+                upt_row = i+j+1 # the row to be updated
+                if i+j+1 >= len(self.data):
+                    break
+                else:
+                    self.data[upt_row, upt_col] = prediction
+        
+        return predictions
+
+
+    def run(self):
+        # load the model and the data
+        self.load_model()
+        self.load_data()
+        # preprocess the data
+        self.preprocess_data()
+
+        # make predictions
+        predictions = self.recurrent_prediction()
+
+        # Create a DataFrame with the predictions
+        predictions_df = pd.DataFrame(predictions)
+        
+        # saving predictions
+        predictions_df.to_csv('./results/output_data/' + self.model_name + '.csv', index=False)
+
+        
+
+if __name__ == '__main__':
+    model_name = 'xgboost_with_energy'
+    data_name = 'prediction_data_energy'
+    prediction = Prediction(model_name, data_name)
+    prediction.run()
