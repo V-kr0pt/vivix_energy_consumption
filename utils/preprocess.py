@@ -77,8 +77,9 @@ class Preprocess:
 
         # Update self.categorical_features with the transformed features
         self.categorical_features = list(self.preprocessor.named_transformers_['cat'].named_steps['onehot'].get_feature_names_out())
-        self.features = self.boolean_features + self.categorical_features + self.numerical_features
-
+        self.features = self.preprocessor.get_feature_names_out()
+        self.features = self.features.tolist()
+    
     def transform(self, data):
         assert self.preprocessor is not None, 'You need to fit the preprocessor before transforming the data'
         return self.preprocessor.transform(data) 
@@ -89,4 +90,13 @@ class Preprocess:
         self.fit(data)
         return self.transform(data)
     
+    # This function returns the real boost power based on the glass color 
+    def boost_power(self, color, boost_extraction):
+        if color == 'incolor' or color == 0:
+            return (boost_extraction*0.03)
+        elif color == 'verde' or color == 1:
+            return (boost_extraction*0.0302) + 1.3852
+        elif color == 'cinza' or color == 2:
+            return (boost_extraction*0.0296) + 1.0935
+
     
