@@ -1,11 +1,13 @@
 import joblib
 import pandas as pd
 from utils.preprocess import Preprocess
+import numpy as np
 
 class Prediction:
-    def __init__(self, model_name, data_name):
+    def __init__(self, model_name, data_name, energy_recurrence=False):
         self.model_name = model_name
         self.data_name = data_name
+        self.energy_recurrence = energy_recurrence
         
     def load_model(self):
         path = './results/models/' + self.model_name + '.pkl'
@@ -25,9 +27,14 @@ class Prediction:
             'extração': 'extracao_forno',
             'caco': 'porcentagem_caco',
             'ext forno boosting': 'extracao_boosting',
-            'potencia boosting': 'boosting',
-            'medio_diario': 'consumo_medio_diario',
-        }, inplace=True)  
+            'potencia boosting': 'boosting'
+        }, inplace=True) 
+
+        # if recurrent prediction we have to change another column name
+        if self.energy_recurrence:
+            self.data.rename(columns={
+                'medio_diario': 'consumo_medio_diario',
+            }, inplace=True)
         
         # we'll return the 'cor' to their orignal names, so we can use the same preprocessing as before
         cor_dict = {0:'incolor', 1:'verde', 2:'cinza'}
@@ -65,19 +72,22 @@ class Prediction:
         self.data['day'] = self.data['datetime'].dt.day
 
         # create lag target column
-        lag_columns_list = [self.target]*7
-        lag_values = [1, 2, 3, 4, 5, 6, 7]
-        self.data = preprocess.create_lag_columns(lag_columns_list, lag_values)
-        self.data = self.data.iloc[7:]
+        if self.energy_recurrence:
+            lag_columns_list = [self.target]*7
+            lag_values = [1, 2, 3, 4, 5, 6, 7]
+            self.data = preprocess.create_lag_columns(lag_columns_list, lag_values)
+            self.data = self.data.iloc[7:]
 
         # Tranform the columns to use OneHotEncoder
         preprocessor_path = './results/preprocessors/' + self.model_name + '_preprocessor.pkl'
         preprocess.load_preprocessor(preprocessor_path)
         
         # Remove target_data and datetime columns
-        self.target_data = self.data[self.target].values.reshape(-1,1)
+        if self.energy_recurrence:
+            self.target_data = self.data[self.target].values.reshape(-1,1)
+            self.data.drop(columns=[self.target], inplace=True)
         self.datetime_data = self.data['datetime'].values.reshape(-1,1)
-        self.data.drop(columns=[self.target, 'datetime'], inplace=True)
+        self.data.drop(columns=['datetime'], inplace=True)
 
         # Transform the data and concatenate the target_data
         self.data = preprocess.transform(self.data) 
@@ -111,6 +121,18 @@ class Prediction:
         
         return predictions
 
+    def prediction(self):
+        predictions = []
+
+        prediction = self.model.predict(self.data)
+        
+        for i, row in enumerate(prediction):
+            predictions.append({
+                'datetime': self.datetime_data[i,0],
+                'predicted_consumo': row
+            })
+        
+        return predictions
 
     def run(self):
         # load the model and the data
@@ -120,18 +142,19 @@ class Prediction:
         self.preprocess_data()
 
         # make predictions
-        predictions = self.recurrent_prediction()
+        if self.energy_recurrence:
+            predictions = self.recurrent_prediction()
+        else: 
+            predictions = self.prediction()
 
         # Create a DataFrame with the predictions
-        predictions_df = pd.DataFrame(predictions)
+        predictions_df = pd.DataFrame(predictions, columns=['datetime', 'predicted_consumo'])
         
         # saving predictions
         predictions_df.to_csv('./results/output_data/' + self.model_name + '.csv', index=False)
 
-        
-
 if __name__ == '__main__':
-    model_name = 'xgboost_with_energy'
-    data_name = 'prediction_data_energy'
-    prediction = Prediction(model_name, data_name)
+    model_name = 'xgboost_shuffle_v4'
+    data_name = 'prediction_data_original'
+    prediction = Prediction(model_name, data_name, energy_recurrence=False)
     prediction.run()
