@@ -40,23 +40,22 @@ class Model_utils:
             self.save_model()
     
     # Save the model in a pickle file
-    def save_model(self):
-        now = datetime.now()
-        now = now.strftime("%Y-%m-%d_%H-%M-%S")
+    def save_model(self, model, model_name, path='results/models'):
+        #now = datetime.now()
+        #now = now.strftime("%Y-%m-%d_%H-%M-%S")
 
-        folder = 'models'
-        file_name = f'{self.model_name}__{now}.pkl'
-        preprocessor_folder = folder + '/preprocessors'
-        preprocessor_name = f'{self.model_name}__{now}_preprocessor.pkl'
+        file_name = f'{model_name}.pkl'
+        #preprocessor_folder = folder + '/preprocessors'
+        #preprocessor_name = f'{self.model_name}__{now}_preprocessor.pkl'
 
-        self.model_path = f'{folder}/{file_name}'
-        self.preprocessor_path = f'{preprocessor_folder}/{preprocessor_name}'
+        self.model_path = f'{path}/{file_name}'
+        #self.preprocessor_path = f'{preprocessor_folder}/{preprocessor_name}'
 
         with open(self.model_path, 'wb') as file:
-            pickle.dump(self.model, file)
+            pickle.dump(model, file)
 
-        with open(self.preprocessor_path, 'wb') as file:
-            pickle.dump(self.preprocessor, file)
+        #with open(self.preprocessor_path, 'wb') as file:
+        #    pickle.dump(self.preprocessor, file)
 
     # Load the model from a pickle file
     def load_model(self, model_path=None, preprocessor_path=None):
