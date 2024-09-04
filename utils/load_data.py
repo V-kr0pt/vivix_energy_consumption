@@ -85,13 +85,14 @@ class LoadData:
         # gc.collect() # you have to import gc (garbage collector)
 
         # Create a different dataframe with only the last 2 months of data 
-        last_days = data['datetime'].max() - pd.Timedelta(days=test_days)
-        self.last_month_data = data.loc[data['datetime'] >= last_days].copy()
-        self.data = data.loc[data['datetime'] < last_days].copy()
+        self.data = data.copy()
+        # last_days = data['datetime'].max() - pd.Timedelta(days=test_days)
+        # self.last_month_data = data.loc[data['datetime'] >= last_days].copy()
+        # self.data = data.loc[data['datetime'] < last_days].copy()
 
         # Finally we can drop the datetime column
         self.data.drop(columns=['datetime'], inplace=True)
-        self.last_month_data.drop(columns=['datetime'], inplace=True)
+        #self.last_month_data.drop(columns=['datetime'], inplace=True)
 
         # Identify categorical and numerical columns
         self.boolean_features = ['prod_e', 'prod_l'] # Boolean columns
