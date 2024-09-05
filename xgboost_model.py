@@ -1,7 +1,7 @@
 import mlflow
 from mlflow.models import infer_signature
 
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, train_test_split
 
 from utils.preprocess import Preprocess
 from utils.load_data import LoadData
@@ -10,12 +10,12 @@ from utils.model_utils import Model_utils
 import xgboost as xgb
 
 # comments to be saved in the history
-comments = '==Sem prod_L, prod_E!===; 7 lag target'
-model_name = 'xgboost'
+comments = '==Sem prod_L, prod_E!===; sem lag; shuffle=True; grid_search'
+model_name = 'xgboost_shuffle_v4'
 
 # Load data
 load_data = LoadData()
-data = load_data.data        
+data = load_data.data   
 
 # Removing prod_l and prod_e columns
 data.drop(columns=['prod_l', 'prod_e'], inplace=True)
@@ -26,19 +26,14 @@ preprocess = Preprocess(data, load_data.numerical_features, load_data.categorica
                         load_data.boolean_features, load_data.target)
 preprocess.create_preprocessor(imputer_stategy=None, scale_std=False, scale_minmax=False)
 
-# lagging columns
-lag_columns_list = [load_data.target]*7  # load_data.target is the 'consumo_max_diario' column 
-lag_values = [1, 2, 3, 4, 5, 6, 7]
-
-# create the lagged columns in data
-data = preprocess.create_lag_columns(lag_columns_list, lag_values)
-data = data.iloc[7:]
-
 features = preprocess.features
 target = preprocess.target
 
-X_train = data[features]
-y_train = data[target]
+X = data[features]
+y = data[target]
+
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
 
 # Preprocess the data
 X_train = preprocess.fit_transform(X_train)
@@ -49,42 +44,31 @@ preprocess.save_preprocessor(preprocess_path)
 
 # Train the model
 # Define the parameter grid for grid search
-# param_grid = {...}
-
-params = {
-    'n_estimators': 1500,
-    'max_depth': 3,
-    'learning_rate': 0.5,
-    'gamma': 0, # Minimum loss reduction required to make a further partition on a leaf node of the tree
-    'subsample': 0.4,
-    'reg_alpha': 0.1, # L1 regularization
-    'reg_lambda': 0, # L2 regularization
-    'random_state': 42
-}
+param_grid = {    
+    'n_estimators': [100, 300, 500, 700, 1000, 1200, 1500, 1700, 2000],
+    'max_depth': [0, 5, 10, 15],
+    'learning_rate': [0.01, 0.1, 0.5],
+    'gamma': [0], # Minimum loss reduction required to make a further partition on a leaf node of the tree
+    'subsample': [0.2, 0.4, 0.6, 0.8],
+    'reg_alpha': [0.01, 0.1, 0.2, 0.3], # L1 regularization
+    'reg_lambda': [0, 0.001, 0.0025], # L2 regularization
+    'random_state': [42]}
 
 # Create the XGBRegressor model
 model = xgb.XGBRegressor()
 
 # Train the model
 # TimeSeriesSplit Config
-#tscv = TimeSeriesSplit(n_splits=10) #SEE THE CHANGES
-#grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
-#grid_search.fit(X_train, y_train)
+tscv = TimeSeriesSplit(n_splits=10) 
+grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search.fit(X_train, y_train)
 
 # Set the best parameters 
-#params = grid_search.best_params_
+params = grid_search.best_params_
 model = model.set_params(**params)
 model.fit(X_train, y_train)
 
 ### Evaluate the model
-test_data = load_data.last_month_data
-
-# create the lagged columns in data
-test_data = preprocess.create_lag_columns(lag_columns_list, lag_values, data=test_data, update_features=False)
-test_data = test_data.iloc[7:]
-
-X_test = test_data[features]
-y_test = test_data[target]
 
 # Preprocess the test data
 X_test = preprocess.transform(X_test) 
@@ -101,6 +85,10 @@ pred_plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2
 all_features = preprocess.features
 feature_importance_path = model_utils.plot_feature_importance(model, all_features, model_name)
 
+# save the model in results
+model_utils.save_model(model, model_name)
+
+
 ## --------------------- Tracking experiments with MLflow --------------
 
 #### MLflow
@@ -110,7 +98,7 @@ dags_hub_url = 'https://dagshub.com/V-kr0pt/vivix_energy_consumption.mlflow'
 mlflow.set_tracking_uri(uri=dags_hub_url)
 
 # Create a new MLflow Experiment
-experiment = 'energy_regression'
+experiment = 'energy_regression_sem_energia'
 mlflow.set_experiment(experiment)
 
 with mlflow.start_run():
