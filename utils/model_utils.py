@@ -1,4 +1,3 @@
-import numpy as np
 import pickle
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
@@ -6,6 +5,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, c
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 class Model_utils:
     def __init__(self):
@@ -40,23 +40,22 @@ class Model_utils:
             self.save_model()
     
     # Save the model in a pickle file
-    def save_model(self):
-        now = datetime.now()
-        now = now.strftime("%Y-%m-%d_%H-%M-%S")
+    def save_model(self, model, model_name, path='results/models'):
+        #now = datetime.now()
+        #now = now.strftime("%Y-%m-%d_%H-%M-%S")
 
-        folder = 'models'
-        file_name = f'{self.model_name}__{now}.pkl'
-        preprocessor_folder = folder + '/preprocessors'
-        preprocessor_name = f'{self.model_name}__{now}_preprocessor.pkl'
+        file_name = f'{model_name}.pkl'
+        #preprocessor_folder = folder + '/preprocessors'
+        #preprocessor_name = f'{self.model_name}__{now}_preprocessor.pkl'
 
-        self.model_path = f'{folder}/{file_name}'
-        self.preprocessor_path = f'{preprocessor_folder}/{preprocessor_name}'
+        self.model_path = f'{path}/{file_name}'
+        #self.preprocessor_path = f'{preprocessor_folder}/{preprocessor_name}'
 
         with open(self.model_path, 'wb') as file:
-            pickle.dump(self.model, file)
+            pickle.dump(model, file)
 
-        with open(self.preprocessor_path, 'wb') as file:
-            pickle.dump(self.preprocessor, file)
+        #with open(self.preprocessor_path, 'wb') as file:
+        #    pickle.dump(self.preprocessor, file)
 
     # Load the model from a pickle file
     def load_model(self, model_path=None, preprocessor_path=None):
@@ -127,9 +126,12 @@ class Model_utils:
 
 
     def plot_predictions(self, y_pred, y_true, mae, mse, rmse, r2, model_name,graph_name='prediction',
-                          graph_title='Consumo máximo de energia diária do Forno',
+                          graph_title=None,
                           graph_ylabel='Consumo de energia (MWh/dia)',
                           save=True, save_path='results/graphs/', print_error=False):
+        
+        if graph_title is None:
+            graph_title = f'{model_name} - Prediction vs True'
         
         # Create the error bands
         upper_band = y_pred + rmse
@@ -178,7 +180,7 @@ class Model_utils:
         for i in range(len(X) - seq_length):
             X_seq.append(X[i:i+seq_length])
             y_seq.append(y[i+seq_length])
-        return X_seq, y_seq
+        return np.array(X_seq), np.array(y_seq)
 
     def calculate_metrics(self, y_test, y_pred):
         mae = mean_absolute_error(y_test, y_pred)
@@ -198,7 +200,15 @@ class Model_utils:
         fig.savefig(plot_path)
         return plot_path
     
-
+    def plot_feature_importance(self, model, features, model_name):
+        sns.set_theme(style="darkgrid")
+        fig, ax = plt.subplots(figsize=(20, 15))
+        sns.barplot(x=model.feature_importances_, y=features, ax=ax)
+        ax.set_title('Feature Importance')
+        plot_path = f'results/graphs/{model_name}_feature_importance.png'
+        fig.savefig(plot_path)
+        return plot_path
+    
     def plot_confusion_matrix(self, y_test, y_pred, model_name):
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots(figsize=(10, 5))
