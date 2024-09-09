@@ -1,9 +1,9 @@
 import pandas as pd
 
 class LoadData:
-    def __init__(self, path='content/potencias_geral.xlsx', test_months=1, verbose=1):
+    def __init__(self, path='content/potencias_geral.xlsx', log_merge=False, verbose=False):
         data = pd.read_excel(path)
-        old_data = pd.read_excel('content/cleaned_data_train.xlsx')
+        old_data = pd.read_excel('content/data_trainE_L_MARÇO_COMPLETO.xlsx')
 
         # Rename columns
         # all in lower case
@@ -29,59 +29,70 @@ class LoadData:
         # create datetime column to group by and sum the consumption
         data['datetime'] = data.apply(self.adjust_time, axis=1)
 
-        # Group by datetime and ponto_de_medicao
+        # Sum the energy consumption from differents ponto_de_medicao grouping by datetime 
         data = data.groupby(['datetime'])['consumo_mwh'].sum().reset_index()
 
-        # Standardize string columns to lowercase
-        data = data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
-
-        # Garantee that the data is sorted by date
+        # Assure that the data is sorted by date
         data = data.sort_values(by='datetime')
+
+        # Standardize string columns to lowercase
+        old_data = old_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
 
         # now divide the data column into year, month, week_day and hour
         data['year'] = data['datetime'].dt.year
         data['month'] = data['datetime'].dt.month
         data['day'] = data['datetime'].dt.day
         data['week_day'] = data['datetime'].dt.dayofweek
-        data['hour'] = data['datetime'].dt.hour
+        # data['hour'] = data['datetime'].dt.hour not relevant to the max or mean of the day
 
         # Now we only need the max consumation value from the day
         data['consumo_max_diario'] = data.groupby(['year', 'month', 'day'])['consumo_mwh'].transform('max')
         data = data[data['consumo_mwh'] == data['consumo_max_diario']]
         data.drop(columns=['consumo_mwh'], inplace=True)
 
+        # Drop duplicate rows to keep only one row per day
+        data = data.drop_duplicates(subset=['year', 'month', 'day'])
+
+        # Reset the index
+        data.reset_index(drop=True, inplace=True)
+
         # we can concatenate the old data with the new one
-        # unfortunnaly we will losing some data but we have more features
-        if verbose:
-            print('\nData lost: ', data.shape[0] - old_data.shape[0], ' samples')
+        # Since we don't have the november data and the old_data don't have the 1st of april 2024
+        # we'll lose 31 days of data
+        # But using that we have more features
+        print('Data lost: ', abs(data.shape[0] - old_data.shape[0]))
         data['datetime'] = data['datetime'].dt.date
         old_data['datetime'] = old_data['datetime'].dt.date
-        data = pd.merge(data, old_data, on='datetime')
+
+        merged_data = pd.merge(data, old_data, on='datetime', how='outer', indicator=True)
+        # doing a log data to confirm that the merge was successful
+        if log_merge:
+            merged_data[merged_data['_merge'] == 'both'].to_excel('content/content_log/merged_data.xlsx', index=False)
+            print('Data merged: ', merged_data[merged_data['_merge'] == 'both'].shape[0])
+            not_merged_data = merged_data[merged_data['_merge'] != 'both']
+            print('Data not merged: ', not_merged_data.shape[0])
+            not_merged_data.to_excel('content/content_log/not_merged_data.xlsx', index=False)
+            data.to_excel('content/content_log/data_bfr_merge.xlsx', index=False)
+            old_data.to_excel('content/content_log/old_data_bfr_merge.xlsx', index=False)
+
+        data = merged_data[merged_data['_merge'] == 'both'].copy()
         # the medio_diario is not useful anymore
         data.drop(columns=['medio_diario'], inplace=True)
 
-        ## we'll create binary classes for the consumption using 8.3 mWh as threshold
+        ## we'll create binary classes for the consumption using 8.3 MWh as threshold
         data['crossed_threshold'] = data['consumo_max_diario'].apply(lambda x: 1 if x >= 8.3 else 0)
         if verbose:
             print('\n\t\t\t===Number of samples for each class====')
             print(data['crossed_threshold'].value_counts())
 
-        # Create a different dataframe with only the last month data (last 30 days)
-        delta_days = test_months*30
-        last_30_days = data['datetime'].max() - pd.Timedelta(days=delta_days)
-        self.last_month_data = data.loc[data['datetime'] >= last_30_days].copy()
-        self.data = data.loc[data['datetime'] < last_30_days].copy()
-        if verbose:
-            print('\n\t\t---- Ratio test/train ----')
-            print(self.last_month_data.shape[0] / (data.shape[0]+self.last_month_data.shape[0]))
+        self.data = data.copy()
 
         # Finally we can drop the datetime column
         self.data.drop(columns=['datetime'], inplace=True)
-        self.last_month_data.drop(columns=['datetime'], inplace=True)
 
         # Identify categorical and numerical columns
         self.boolean_features = ['prod_e', 'prod_l'] # Boolean columns
-        self.categorical_features = ['year', 'month', 'week_day', 'hour', 'day', 'cor']  # Categorical columns
+        self.categorical_features = ['month', 'week_day', 'day', 'cor']  # Categorical columns
         self.numerical_features = ['boosting', 'espessura', 'extracao_forno', 'porcentagem_caco']   # Numerical columns
         
         # create a list with all features and the target
@@ -97,13 +108,12 @@ class LoadData:
 
 
 if __name__ == '__main__':
-    load_data = LoadData()
+    load_data = LoadData(log_merge=True)
     print('\n\t\t---- Data ----')
     print(load_data.data.head())
+    print('...')
+    print(load_data.data.tail())
     print('shape: ', load_data.data.shape)
-    print('\n\t\t---- Last month data ----\t')
-    print(load_data.last_month_data.head())
-    print('shape: ', load_data.last_month_data.shape)
     print('\n\t\t---- Features ----')
     print(load_data.features)
     print('number of features: ', len(load_data.features))
