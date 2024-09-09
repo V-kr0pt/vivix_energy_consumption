@@ -6,36 +6,34 @@ from sklearn.compose import ColumnTransformer
 import joblib
 
 class Preprocess:
-    def __init__(self, data, numerical_features, categorical_features, boolean_features, target):
-        self.data = data
+    def __init__(self, numerical_features, categorical_features, boolean_features):
         self.numerical_features = numerical_features
         self.categorical_features = categorical_features
         self.boolean_features = boolean_features
-        self.target = target
 
         self.features = self.numerical_features + self.categorical_features + self.boolean_features
     
-    def create_lag_columns(self, lag_columns, lag_values, data=None, update_features=True):
-        if data is None:
-            data = self.data
-        # Create lag columns
-        for column, value in zip(lag_columns, lag_values):
-            lag_column_name = column+f'_lag{value}'
-            data[lag_column_name] = data[column].shift(value)
-
-            if column in self.numerical_features or column == self.target:
-                self.numerical_features.append(lag_column_name)
-            elif column in self.categorical_features:
-                self.categorical_features.append(lag_column_name)
-            elif column in self.boolean_features:
-                self.boolean_features.append(lag_column_name)
-        
-        # update features if data is the train data
-        if update_features:
-            self.features = self.numerical_features + self.categorical_features + self.boolean_features 
-
-        return data 
-    
+    #def create_lag_columns(self, lag_columns, lag_values, data=None, update_features=True):
+    #    if data is None:
+    #        data = self.data
+    #    # Create lag columns
+    #    for column, value in zip(lag_columns, lag_values):
+    #        lag_column_name = column+f'_lag{value}'
+    #        data[lag_column_name] = data[column].shift(value)
+#
+    #        if column in self.numerical_features or column == self.target:
+    #            self.numerical_features.append(lag_column_name)
+    #        elif column in self.categorical_features:
+    #            self.categorical_features.append(lag_column_name)
+    #        elif column in self.boolean_features:
+    #            self.boolean_features.append(lag_column_name)
+    #    
+    #    # update features if data is the train data
+    #    if update_features:
+    #        self.features = self.numerical_features + self.categorical_features + self.boolean_features 
+#
+    #    return data 
+    #
     def create_preprocessor(self, imputer_stategy=None, scale_std=False, scale_minmax=False):
 
         # Transformer to numerical columns
