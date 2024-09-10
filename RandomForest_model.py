@@ -1,145 +1,144 @@
 import mlflow
 from mlflow.models import infer_signature
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.metrics import precision_score, recall_score, f1_score
 from utils.model_utils import Model_utils 
 from utils.load_data import LoadData 
 from utils.preprocess import Preprocess
 
 # comments to be saved in the history
-comments = '7 lags medio_diario + 1 lag all features; shuffle train data = False'
-model_name = 'Random_Forest'
+comments = 'shuffle=False'
+model_name = 'random_forest'
 
 # load train/validation data
-load_data = LoadData()
+load_data = LoadData(verbose=True)
+
+# load train/validation data
 data = load_data.data
+features = load_data.features
+target = load_data.target
 
-preprocess = Preprocess(data, load_data.numerical_features, load_data.categorical_features,
-                         load_data.boolean_features, load_data.target)
+preprocess = Preprocess(load_data.numerical_features, load_data.categorical_features,
+                         load_data.boolean_features)
 
-# lagging columns
-lag_columns_list = ['medio_diario']*7
-lag_values = [1, 2, 3, 4, 5, 6, 7]
-lag_columns_list += load_data.features
-lag_values += [1,2] * len(load_data.features)
+# Train test split
+X = data[features]
+y = data[target]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)#random_state=42)
 
-# create the lagged columns in data
-data = preprocess.create_lag_columns(lag_columns_list, lag_values)
-data = data.iloc[7:]
-
-# shuffling data
-#data = data.sample(frac=1, random_state=42).reset_index(drop=True)
-
-features = preprocess.features
-target = preprocess.target
-
-X_train = data[features]
-y_train = data[target]
-
-# Scale is not needed for XGBoost (it is a tree-based model)
-preprocessor = preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
-
-# Split the data into training and test sets
-#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Create the preprocessor (tree-based models do not need scaling)
+preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
 
 # Preprocess the data
-X_train = preprocessor.fit_transform(X_train)
+X_train = preprocess.fit_transform(X_train)
 
 # Train the model
 
 # Define the parameter grid for grid search
-#param_grid = {
-#    'n_estimators': [400, 500, 600, 700],
-#    'max_depth': [None, 5, 10, 15],
-#    'min_samples_split': [2, 5],
-#    'min_samples_leaf': [1, 2, 4],
-#    'max_features': [1, 'sqrt', 'log2'],
-#    'random_state': [42]
-#}
-
-# Define the parameters (best model)
-params = {
-    'n_estimators':600,
-    'max_depth':None,
-    'min_samples_split':2,
-    'min_samples_leaf':1,
-    'max_features':'sqrt',
-    'random_state':42
+param_grid = {
+   'n_estimators': [10, 50, 100, 300, 400, 500, 600, 700],
+   'max_depth': [None, 5, 10, 15],
+   'min_samples_split': [2, 5],
+   'min_samples_leaf': [1, 2, 4],
+   'max_features': [1, 'sqrt', 'log2'],
+   'random_state': [42]
 }
 
 # Create the Random Forest model
-model = RandomForestRegressor()#RandomForestRegressor(**params)
+model = RandomForestClassifier()
 
 # TimeSeriesSplit Config
-#tscv = TimeSeriesSplit(n_splits=10)
+scv = StratifiedKFold(n_splits=10, shuffle=False)
 
 # Train the model
-#grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='neg_mean_squared_error', n_jobs=-1)
-#grid_search.fit(X_train, y_train)
+grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=scv, scoring='average_precision', n_jobs=-1)
+grid_search.fit(X_train, y_train)
 
 # Set the best parameters 
-#params = grid_search.best_params_
+params = grid_search.best_params_
 model = model.set_params(**params)
 model.fit(X_train, y_train)
 
+model_utils = Model_utils()
 ### Evaluate the model
-test_data = load_data.last_month_data
-
-# create the lagged columns in data
-test_data = preprocess.create_lag_columns(lag_columns_list, lag_values, data=test_data)
-test_data = test_data.iloc[7:]
-
-X_test = test_data[features]
-y_test = test_data[target]
-
 # Preprocess the test data
-X_test = preprocessor.transform(X_test) 
+X_test = preprocess.transform(X_test) 
 
 # Test the model
-y_pred = model.predict(X_test)
+y_pred_binary = model.predict(X_test)
+y_pred_prob = model.predict_proba(X_test)[:,1] # the votes of each tree in the forest
+print("\n====================================")
+print(f'true values:\n {y_test.values}')
+print("=")
+print(f'Probability of demand overflow:\n {y_pred_prob}')
+print("=")
+print(f'Prediction:\n {y_pred_binary}')
+print("====================================\n")
+
+
+# plotting ROC and Precision-Recall curves
+plot_path_roc, auc_roc, _ = model_utils.plot_roc(y_test, y_pred_prob, model_name)
+plot_path_prec_rec, auc_pr, threshold = model_utils.plot_precision_recall(y_test, y_pred_prob, model_name)
 
 # Evaluate the model
-mae = mean_absolute_error(y_test, y_pred)
-mse = mean_squared_error(y_test, y_pred)
-rmse = mse ** 0.5
-r2 = r2_score(y_test, y_pred)
+# Evaluate the model
+precision = precision_score(y_test, y_pred_binary)
+recall = recall_score(y_test, y_pred_binary)
+f1 =  f1_score(y_test, y_pred_binary)
+print("\n==============================")
+print(f'Precision: {precision}, Recall: {recall}, F1: {f1}')
+print("==============================\n")
 
-model_utils = Model_utils()
-plot_path = model_utils.plot_predictions(y_pred, y_test, mae, mse, rmse, r2, model_name)
+# Confusion matrix
+plot_path_cfm = model_utils.plot_confusion_matrix(y_test, y_pred_binary, model_name)
+#plot_path_train_cfm = model_utils.plot_confusion_matrix(y_train, y_pred_train_binary, model_name + '_train')
+
+# saving the feature importance
+all_features = preprocess.features
+feature_importance_path = model_utils.plot_feature_importance(model, all_features, model_name)
+
+# save the model in results
+model_utils.save_model(model, model_name)
 
 #### MLflow
 
 # Set our tracking server uri for logging
-mlflow.set_tracking_uri(uri="http://127.0.0.1:8080")
+dags_hub_url = 'https://dagshub.com/V-kr0pt/vivix_energy_consumption.mlflow'
+mlflow.set_tracking_uri(uri=dags_hub_url)
 
 # Create a new MLflow Experiment
-mlflow.set_experiment("MLflow Vivix")
+experiment = 'demand_classification'
+mlflow.set_experiment(experiment)
 
 with mlflow.start_run():
     # Log the hyperparameters
     mlflow.log_params(params)
 
     # Save the prediction plot
-    mlflow.log_artifact(plot_path)
+    mlflow.log_artifact(plot_path_cfm)
+    mlflow.log_artifact(plot_path_roc)
+    mlflow.log_artifact(plot_path_prec_rec)
+    #mlflow.log_artifact(plot_path_train_cfm)
 
-    # Log the loss metric
-    mlflow.log_metric("MAE", mae)
-    mlflow.log_metric("MSE", mse)
-    mlflow.log_metric("RMSE", rmse)
-    mlflow.log_metric("R2", r2)
+    # Log the loss metricFailed to fetch
+    mlflow.log_metric("precision", precision)
+    mlflow.log_metric("recall", recall)
+    mlflow.log_metric("f1", f1)
+    mlflow.log_metric("auc_roc", auc_roc)
+    mlflow.log_metric("auc_pr", auc_pr)
+    mlflow.log_metric("threshold", threshold)
 
     # Set a tag that we can use to remind ourselves what this run was for
     mlflow.set_tag("Training Info", comments)
 
     # Infer the model signature
-    signature = infer_signature(X_train, model.predict(X_train))
+    signature = infer_signature(X_train, model.predict_proba(X_train)[:,1])
 
     # Log the model
     model_info = mlflow.sklearn.log_model(
         sk_model=model,
         artifact_path="vivix_model",
         signature=signature,
-        input_example=X_train[0],
         registered_model_name=model_name,
     )
