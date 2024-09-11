@@ -70,31 +70,30 @@ class Preprocess:
 
         #return preprocessor
 
+
     def fit(self,data):
         # Fit the preprocessor
         self.preprocessor = self.preprocessor.fit(data)
-
-        # Update self.categorical_features with the transformed features
-        self.categorical_features = list(self.preprocessor.named_transformers_['cat'].named_steps['onehot'].get_feature_names_out())
-        self.features = self.preprocessor.get_feature_names_out()
-        self.features = self.features.tolist()
+        self.update_features()
     
+
     def transform(self, data):
         assert self.preprocessor is not None, 'You need to fit the preprocessor before transforming the data'
-        self.features = self.preprocessor.get_feature_names_out()
-        self.features = self.features.tolist()
-        self.numerical_features = [feature for feature in self.features if 'num' in feature]
-        self.categorical_features = [feature for feature in self.features if 'cat' in feature]
-        self.boolean_features = [feature for feature in self.features if 'bool' in feature]
-        return self.preprocessor.transform(data) 
+        transformed_data = self.preprocessor.transform(data)
+        return transformed_data
 
-        #assert self.features == transformed_data.columns.tolist(), 'The columns in the data are different from the features used to fit the preprocessor'
-               
 
     def fit_transform(self, data):
         self.fit(data)
         return self.transform(data)
     
+    def update_features(self):
+        self.features = self.preprocessor.get_feature_names_out()
+        self.features = self.features.tolist()
+        self.numerical_features = [feature for feature in self.features if 'num' in feature]
+        self.categorical_features = [feature for feature in self.features if 'cat' in feature]
+        self.boolean_features = [feature for feature in self.features if 'bool' in feature]
+
     def save_preprocessor(self, path):
         joblib.dump(self.preprocessor, path)
 
