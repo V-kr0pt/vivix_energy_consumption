@@ -83,6 +83,9 @@ class Preprocess:
         assert self.preprocessor is not None, 'You need to fit the preprocessor before transforming the data'
         self.features = self.preprocessor.get_feature_names_out()
         self.features = self.features.tolist()
+        self.numerical_features = [feature for feature in self.features if 'num' in feature]
+        self.categorical_features = [feature for feature in self.features if 'cat' in feature]
+        self.boolean_features = [feature for feature in self.features if 'bool' in feature]
         return self.preprocessor.transform(data) 
 
         #assert self.features == transformed_data.columns.tolist(), 'The columns in the data are different from the features used to fit the preprocessor'

@@ -6,6 +6,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, c
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 class Model_utils:
     def __init__(self):
@@ -50,6 +51,11 @@ class Model_utils:
 
         self.model_path = f'{path}/{file_name}'
         #self.preprocessor_path = f'{preprocessor_folder}/{preprocessor_name}'
+        if os.path.exists(self.model_path):
+            now = datetime.now()
+            now = now.strftime("%Y-%m-%d_%H-%M-%S")
+            file_name = f'{model_name}_{now}.pkl'
+            self.model_path = f'{path}/{file_name}'
 
         with open(self.model_path, 'wb') as file:
             pickle.dump(model, file)
