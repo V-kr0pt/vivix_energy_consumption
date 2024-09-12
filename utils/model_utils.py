@@ -60,6 +60,8 @@ class Model_utils:
         with open(self.model_path, 'wb') as file:
             pickle.dump(model, file)
 
+        return model_name
+
         #with open(self.preprocessor_path, 'wb') as file:
         #    pickle.dump(self.preprocessor, file)
 
