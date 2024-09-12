@@ -45,22 +45,22 @@ class Model_utils:
         #now = datetime.now()
         #now = now.strftime("%Y-%m-%d_%H-%M-%S")
 
-        file_name = f'{model_name}.pkl'
+        file_name = f'{model_name}'
         #preprocessor_folder = folder + '/preprocessors'
         #preprocessor_name = f'{self.model_name}__{now}_preprocessor.pkl'
 
-        self.model_path = f'{path}/{file_name}'
+        self.model_path = f'{path}/{file_name}.pkl'
         #self.preprocessor_path = f'{preprocessor_folder}/{preprocessor_name}'
         if os.path.exists(self.model_path):
             now = datetime.now()
             now = now.strftime("%Y-%m-%d_%H-%M-%S")
-            file_name = f'{model_name}_{now}.pkl'
-            self.model_path = f'{path}/{file_name}'
+            file_name = f'{model_name}_{now}'
+            self.model_path = f'{path}/{file_name}.pkl'
 
         with open(self.model_path, 'wb') as file:
             pickle.dump(model, file)
 
-        return model_name
+        return file_name
 
         #with open(self.preprocessor_path, 'wb') as file:
         #    pickle.dump(self.preprocessor, file)
