@@ -9,7 +9,7 @@ from utils.preprocess import Preprocess
 #from imblearn.over_sampling import SMOTE
 
 # comments to be saved in the history
-comments = 'shuffle=False'
+comments = 'shuffle=True'
 model_name = 'xgboost'
 
 load_data = LoadData(verbose=True)
@@ -25,7 +25,7 @@ preprocess = Preprocess(load_data.numerical_features, load_data.categorical_feat
 # train test split
 X = data[features]
 y = data[target]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)#random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Scale is not needed for XGBoost (it is a tree-based model)
 preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
@@ -55,7 +55,7 @@ param_grid = {
 model = xgb.XGBClassifier(objective='binary:logistic')
 
 # Train the model
-scv = StratifiedKFold(n_splits=10, shuffle=False)#, random_state=42)
+scv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=scv, scoring='average_precision', n_jobs=-1)
 grid_search.fit(X_train, y_train)
 
@@ -78,9 +78,9 @@ y_pred_binary = model.predict(X_test)
 print("\n====================================")
 print(f'true values:\n {y_test.values}')
 print("=")
-print(f'Probability of demand overflow:\n {y_pred_prob}')
-print("=")
 print(f'Prediction:\n {y_pred_binary}')
+print("=")
+print(f'Probability of demand overflow:\n {y_pred_prob}')
 print("====================================\n")
 
 # plotting ROC and Precision-Recall curves
@@ -109,7 +109,11 @@ all_features = preprocess.features
 feature_importance_path = model_utils.plot_feature_importance(model, all_features, model_name)
 
 # save the model in results
-model_utils.save_model(model, model_name)
+model_name = model_utils.save_model(model, model_name)
+
+# saving the preprocessor
+preprocess_path = './results/preprocessors/' + model_name + '_preprocessor.pkl'
+preprocess.save_preprocessor(preprocess_path)
 
 
 #### MLflow
@@ -130,15 +134,18 @@ with mlflow.start_run():
     mlflow.log_artifact(plot_path_cfm)
     mlflow.log_artifact(plot_path_roc)
     mlflow.log_artifact(plot_path_prec_rec)
-    #mlflow.log_artifact(plot_path_train_cfm)
+    mlflow.log_artifact(feature_importance_path)
 
-    # Log the loss metricFailed to fetch
+    # Log the loss
     mlflow.log_metric("precision", precision)
     mlflow.log_metric("recall", recall)
     mlflow.log_metric("f1", f1)
     mlflow.log_metric("auc_roc", auc_roc)
     mlflow.log_metric("auc_pr", auc_pr)
     mlflow.log_metric("threshold", threshold)
+
+    # Save the preprocessor
+    mlflow.log_artifact(preprocess_path)
 
     # Set a tag that we can use to remind ourselves what this run was for
     mlflow.set_tag("Training Info", comments)
