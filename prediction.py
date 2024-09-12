@@ -4,10 +4,12 @@ from utils.preprocess import Preprocess
 import numpy as np
 
 class Prediction:
-    def __init__(self, model_name, data_name, energy_recurrence=False):
+    def __init__(self, model_name, data_name, energy_recurrence=False, probability_prediction=False):
         self.model_name = model_name
         self.data_name = data_name
         self.energy_recurrence = energy_recurrence
+        self.probability_prediction = probability_prediction
+        self.prediction_column_name = 'predicted_consumo'
         
     def load_model(self):
         path = './results/models/' + self.model_name + '.pkl'
@@ -33,7 +35,7 @@ class Prediction:
         # if recurrent prediction we have to change another column name
         if self.energy_recurrence:
             self.data.rename(columns={
-                'medio_diario': 'consumo_medio_diario',
+                'medio_diario': 'consumo_medio_diario'
             }, inplace=True)
         
         # we'll return the 'cor' to their orignal names, so we can use the same preprocessing as before
@@ -54,8 +56,8 @@ class Prediction:
         self.target = 'consumo_medio_diario'
 
         # Create a Preprocess object
-        preprocess = Preprocess(self.data, self.numerical_features, self.categorical_features,
-                                 self.boolean_features, self.target)
+        preprocess = Preprocess(self.numerical_features, self.categorical_features,
+                                 self.boolean_features, )
         
         #preprocessor = preprocess.create_preprocessor(imputer_stategy=None, scale_std=False, scale_minmax=False)
         
@@ -125,12 +127,21 @@ class Prediction:
         predictions = []
 
         prediction = self.model.predict(self.data)
-        
+     
+        if self.probability_prediction:
+            self.prediction_column_name = 'estouro_previsto'
+            prob_prediction = self.model.predict_proba(self.data)[:,1]
+            
+            
         for i, row in enumerate(prediction):
-            predictions.append({
-                'datetime': self.datetime_data[i,0],
-                'predicted_consumo': row
-            })
+            dict_predictions = {}
+            dict_predictions['datetime'] = self.datetime_data[i,0]
+            dict_predictions[self.prediction_column_name] = row
+            if self.probability_prediction:
+                dict_predictions['probabilidade_de_estouro'] = prob_prediction[i]
+            
+            predictions.append(dict_predictions)
+        
         
         return predictions
 
@@ -148,13 +159,16 @@ class Prediction:
             predictions = self.prediction()
 
         # Create a DataFrame with the predictions
-        predictions_df = pd.DataFrame(predictions, columns=['datetime', 'predicted_consumo'])
+        if self.probability_prediction:
+            predictions_df = pd.DataFrame(predictions, columns=['datetime', self.prediction_column_name, 'probabilidade_de_estouro'])
+        else:
+            predictions_df = pd.DataFrame(predictions, columns=['datetime', self.prediction_column_name])
         
         # saving predictions
         predictions_df.to_csv('./results/output_data/' + self.model_name + '.csv', index=False)
 
 if __name__ == '__main__':
-    model_name = 'xgboost_shuffle_v4'
+    model_name = 'xgboost_2024-09-11_09-21-24'
     data_name = 'prediction_data_original'
-    prediction = Prediction(model_name, data_name, energy_recurrence=False)
+    prediction = Prediction(model_name, data_name, probability_prediction=True)
     prediction.run()
