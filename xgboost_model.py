@@ -6,7 +6,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 from utils.model_utils import Model_utils 
 from utils.load_data import LoadData
 from utils.preprocess import Preprocess
-#from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import SMOTE
 
 # comments to be saved in the history
 comments = 'shuffle=True'
@@ -34,10 +34,10 @@ preprocess.create_preprocessor(scale_std=False, scale_minmax=False)
 X_train = preprocess.fit_transform(X_train)
 
 # Create SMOTE for imbalanced data
-#smote = SMOTE(sampling_strategy=0.75, random_state=42)
-#X_train, y_train = smote.fit_resample(X_train, y_train)
-#new_data_scale = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
-#print(f'new_data_scale: {new_data_scale}')
+smote = SMOTE(sampling_strategy=0.75, random_state=42)
+X_train, y_train = smote.fit_resample(X_train, y_train)
+new_data_scale = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
+print(f'new_data_scale: {new_data_scale}')
 
 # Train the model
 # Define the parameter grid for grid search
