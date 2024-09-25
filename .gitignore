@@ -3,4 +3,4 @@ venv
 .vscode
 __pycache__
 *.sh
-plan.md
+todo.md
