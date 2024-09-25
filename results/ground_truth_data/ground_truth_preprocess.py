@@ -21,7 +21,7 @@ def preprocess_data(data):
     data['datetime'] = data.apply(adjust_time, axis=1)
 
     # Sum the energy consumption from differents ponto_de_medicao grouping by datetime 
-    data = data.groupby(['datetime'])['consumo_mwh'].max().reset_index()
+    data = data.groupby(['datetime'])['consumo_mwh'].sum().reset_index()
 
     # Assure that the data is sorted by date
     data = data.sort_values(by='datetime')
