@@ -169,6 +169,6 @@ class Prediction:
 
 if __name__ == '__main__':
     model_name = 'xgboost_2024-09-11_09-21-24'
-    data_name = 'prediction_data_original'
+    data_name = 'prediction_data_prod_E_L'
     prediction = Prediction(model_name, data_name, probability_prediction=True)
     prediction.run()
