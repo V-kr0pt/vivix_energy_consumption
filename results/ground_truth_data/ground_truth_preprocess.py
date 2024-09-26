@@ -26,13 +26,10 @@ def preprocess_data(data):
     # Assure that the data is sorted by date
     data = data.sort_values(by='datetime')
 
-    # Reset the index
-    data.reset_index(drop=True, inplace=True)
-
     return data
 
 if __name__ == '__main__':
     path = 'VIVIX_CARGA_2024.csv'
-    data = pd.read_csv(path)
+    data = pd.read_csv(path, sep=';')
     data = preprocess_data(data)
     data.to_csv('ground_truth.csv', index=False)
